@@ -1,6 +1,7 @@
 #include "provisioning.h"
 
 #include <array>
+#include <cstdint>
 #include <cstdio>
 #include <cstring>
 
@@ -11,8 +12,8 @@
 #include "esp_netif.h"
 #include "esp_wifi.h"
 #include "sdkconfig.h"
-#include "wifi_provisioning/manager.h"
-#include "wifi_provisioning/scheme_ble.h"
+#include "network_provisioning/manager.h"
+#include "network_provisioning/scheme_ble.h"
 
 namespace {
 constexpr char kTag[] = "inkmate.prov";
@@ -37,12 +38,11 @@ esp_err_t ProvisioningManager::initialize() {
     ESP_RETURN_ON_ERROR(esp_wifi_init(&wifi_config), kTag, "wifi init");
     derive_identity();
 
-    wifi_prov_mgr_config_t config{
-        .scheme = wifi_prov_scheme_ble,
-        .scheme_event_handler = WIFI_PROV_SCHEME_BLE_EVENT_HANDLER_FREE_BTDM,
-    };
-    ESP_RETURN_ON_ERROR(wifi_prov_mgr_init(config), kTag, "provisioning manager init");
-    ESP_RETURN_ON_ERROR(wifi_prov_mgr_is_provisioned(&provisioned_), kTag, "credential check");
+    network_prov_mgr_config_t config{};
+    config.scheme = network_prov_scheme_ble;
+    config.scheme_event_handler = NETWORK_PROV_SCHEME_BLE_EVENT_HANDLER_FREE_BTDM;
+    ESP_RETURN_ON_ERROR(network_prov_mgr_init(config), kTag, "provisioning manager init");
+    ESP_RETURN_ON_ERROR(network_prov_mgr_is_wifi_provisioned(&provisioned_), kTag, "credential check");
     return ESP_OK;
 }
 
@@ -58,12 +58,9 @@ esp_err_t ProvisioningManager::start_if_needed() {
     }
     ESP_LOGI(kTag, "Starting authenticated BLE provisioning: service=%s",
              service_name.data());
-    wifi_prov_security1_params_t security_params{
-        .data = provisioning_pop,
-        .len = std::strlen(provisioning_pop),
-    };
-    return wifi_prov_mgr_start_provisioning(WIFI_PROV_SECURITY_1, &security_params,
-                                            service_name.data(), nullptr);
+    const network_prov_security1_params_t *security_params = provisioning_pop;
+    return network_prov_mgr_start_provisioning(NETWORK_PROV_SECURITY_1, security_params,
+                                               service_name.data(), nullptr);
 }
 
 }  // namespace inkmate

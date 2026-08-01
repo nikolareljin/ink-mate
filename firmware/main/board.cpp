@@ -28,7 +28,11 @@ BootReport initialize_board_safely() {
     esp_chip_info(&chip);
     BootReport report{};
     if (esp_flash_get_size(nullptr, &report.flash_bytes) != ESP_OK) report.flash_bytes = 0;
+#if CONFIG_SPIRAM
     report.psram_bytes = static_cast<std::uint32_t>(esp_psram_get_size());
+#else
+    report.psram_bytes = 0;
+#endif
     report.pins_verified = required_pins_verified();
 
     ESP_LOGI(kTag, "profile=%s cores=%u revision=%u flash=%lu psram=%lu reset_reason=%d",
@@ -46,11 +50,19 @@ BootReport initialize_board_safely() {
 }
 
 bool automatic_deep_sleep_allowed() {
-    return CONFIG_INKMATE_ENABLE_DEEP_SLEEP && required_pins_verified();
+#if CONFIG_INKMATE_ENABLE_DEEP_SLEEP
+    return required_pins_verified();
+#else
+    return false;
+#endif
 }
 
 bool ota_reboot_allowed() {
-    return CONFIG_INKMATE_ENABLE_OTA_REBOOT && required_pins_verified();
+#if CONFIG_INKMATE_ENABLE_OTA_REBOOT
+    return required_pins_verified();
+#else
+    return false;
+#endif
 }
 
 }  // namespace inkmate

@@ -23,7 +23,7 @@ Layouts are bounded for 200 x 200 monochrome output. Partial refreshes are follo
 
 ## Connectivity, audio, and power
 
-Secure provisioning creates a per-device identity/proof of possession. Pairing data is stored in encrypted NVS; AI credentials stay on the gateway. Requests and audio are bounded and timed out. Offline sensor/time cards remain useful while reconnect attempts use backoff and jitter.
+Secure provisioning requires a privately configured per-device proof of possession and never logs it. Public builds fail closed when it is absent. Wi-Fi credentials use ESP-IDF NVS; NVS encryption remains gated until a hardware-specific key-protection scheme and eFuse slot are deliberately provisioned. Gateway and AI credentials stay off public firmware. Requests and audio are bounded and timed out. Offline sensor/time cards remain useful while reconnect attempts use backoff and jitter.
 
 Docked mode favors responsiveness; battery mode limits radio/audio windows. Battery percentage is unavailable until calibrated. Automatic deep sleep and OTA reboot remain off until every applicable battery reset/wake/rollback scenario passes.
 

@@ -29,4 +29,4 @@ ctest --test-dir build/host-tests --output-on-failure
 
 ## Provisioning
 
-If no credentials exist, firmware starts ESP-IDF's Security 1 provisioning manager over BLE with proof-of-possession. The service name and proof-of-possession are derived per-device and printed once to the serial console for initial development. Production enrollment should convey these values using a device label/QR code. Gateway credentials belong in encrypted NVS; AI-provider credentials never belong on the device.
+If no Wi-Fi credentials exist, firmware starts ESP-IDF's Security 1 provisioning manager over BLE only when a private, per-device proof of possession of at least 16 characters is configured. Public builds leave it empty and fail closed; the firmware never prints it. Wi-Fi credentials use ESP-IDF NVS. NVS encryption remains disabled until a hardware-specific key-protection scheme and eFuse slot are deliberately provisioned and validated. Gateway and AI-provider credentials are not embedded in public firmware.
