@@ -1,0 +1,4 @@
+---
+dependencies:
+  espressif/network_provisioning:
+    version: "1.2.4"

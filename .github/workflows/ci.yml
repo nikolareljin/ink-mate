@@ -1,6 +1,7 @@
+---
 name: CI
 
-on:
+"on":
   push:
     branches: [main]
   pull_request:
@@ -10,20 +11,25 @@ permissions:
   contents: read
 
 jobs:
-  gateway:
+  project:
     uses: nikolareljin/ci-helpers/.github/workflows/ci.yml@production
     with:
       python_version: "3.12"
-      working_directory: gateway
-      lint_command: "python -m pip install -e '.[test]' && python -m compileall -q src tests"
-      test_command: "python -m pytest"
-
-  firmware-host-tests:
-    uses: nikolareljin/ci-helpers/.github/workflows/ci.yml@production
-    with:
-      working_directory: firmware/components/inkmate_core/test
-      build_command: "cmake -S . -B build && cmake --build build"
-      test_command: "ctest --test-dir build --output-on-failure"
+      working_directory: "."
+      lint_command: >-
+        python -m pip install -e './gateway[test]'
+        && python -m compileall -q gateway/src gateway/tests protocol
+      test_command: >-
+        python -m pytest gateway/tests
+        && python protocol/check_schemas.py
+        && cmake -S firmware/components/inkmate_core/test
+        -B firmware/build/host-tests
+        && cmake --build firmware/build/host-tests
+        && ctest --test-dir firmware/build/host-tests --output-on-failure
+      docker_command: >-
+        cp .env.example .env
+        && docker compose config --quiet
+        && docker compose build
 
   firmware:
     runs-on: ubuntu-latest
@@ -31,6 +37,11 @@ jobs:
       fail-fast: false
       matrix:
         board_profile: [v1, v2]
+        include:
+          - board_profile: v1
+            defaults: "sdkconfig.defaults;sdkconfig.v1"
+          - board_profile: v2
+            defaults: "sdkconfig.defaults;sdkconfig.v2"
     steps:
       - uses: actions/checkout@v7
         with:
@@ -41,9 +52,4 @@ jobs:
           esp_idf_version: v6.0.2
           target: esp32s3
           path: firmware
-          command: SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.${{ matrix.board_profile }}" idf.py build
-
-  compose:
-    uses: nikolareljin/ci-helpers/.github/workflows/ci.yml@production
-    with:
-      docker_command: "cp .env.example .env && docker compose config --quiet && docker compose build"
+          command: SDKCONFIG_DEFAULTS="${{ matrix.defaults }}" idf.py build
