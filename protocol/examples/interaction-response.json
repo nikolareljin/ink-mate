@@ -1,0 +1,19 @@
+{
+  "protocol_version": 1,
+  "request_id": "c92df9f3-95b2-4b70-985c-76c37fa27b93",
+  "device_id": "inkmate-demo",
+  "timestamp": "2026-07-31T22:00:00Z",
+  "transcript": "What model is running?",
+  "card": {
+    "kind": "answer",
+    "title": "AI",
+    "body": "Ollama is ready with llama3.2.",
+    "footer": "Local · 1.8 s",
+    "continuation": false,
+    "severity": "normal",
+    "updated_at": "2026-07-31T22:00:00Z"
+  },
+  "speech_url": "/v1/audio/7a553453-82ea-4e04-a242-d999c1a2a177",
+  "pending_action": null,
+  "error": null
+}

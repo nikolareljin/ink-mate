@@ -1,0 +1,39 @@
+menu "InkMate"
+
+choice INKMATE_BOARD
+    prompt "Board revision"
+    default INKMATE_BOARD_V2
+    help
+        Select the revision printed on the PCB. Do not infer this from the product listing.
+    config INKMATE_BOARD_V1
+        bool "ESP32-S3 ePaper 1.54 V1 (non-touch)"
+    config INKMATE_BOARD_V2
+        bool "ESP32-S3 ePaper 1.54 V2 (non-touch)"
+endchoice
+
+config INKMATE_ENABLE_DEEP_SLEEP
+    bool "Allow automatic deep sleep"
+    default n
+    help
+        Keep disabled until cold boot and wake have passed on battery for this unit.
+
+config INKMATE_ENABLE_OTA_REBOOT
+    bool "Allow OTA-triggered reboot"
+    default n
+    help
+        OTA download may be implemented, but reboot is blocked until battery reset testing passes.
+
+config INKMATE_GATEWAY_URI
+    string "Default gateway URI"
+    default "http://inkmate.local:8080"
+
+config INKMATE_PROVISIONING_POP
+    string "BLE provisioning proof of possession"
+    default ""
+    help
+        A per-device, randomly generated secret used by ESP-IDF provisioning
+        security 1. Keep this empty in public builds: provisioning then fails
+        closed. Supply it through a private sdkconfig overlay for bench use.
+        Use at least 16 characters and never commit that overlay.
+
+endmenu

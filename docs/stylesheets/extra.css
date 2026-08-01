@@ -1,0 +1,30 @@
+:root {
+  --md-primary-fg-color: #174b4d;
+  --md-primary-fg-color--light: #2f6d6b;
+  --md-primary-fg-color--dark: #0e3435;
+  --md-accent-fg-color: #d66b35;
+  --ink-charcoal: #17201f;
+  --ink-copper: #d66b35;
+}
+body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+.md-typeset h1, .md-typeset h2, .md-typeset h3 { color: var(--ink-charcoal); font-weight: 750; letter-spacing: -.025em; }
+[data-md-color-scheme="slate"] .md-typeset h1,
+[data-md-color-scheme="slate"] .md-typeset h2,
+[data-md-color-scheme="slate"] .md-typeset h3 { color: #f3efdf; }
+.md-header { background: rgba(23, 75, 77, .97); }
+.md-tabs { background: #103c3e; }
+.md-main { background-image: radial-gradient(circle at 90% 5%, rgba(214,107,53,.08), transparent 24rem); }
+.ink-hero { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(18rem, .95fr); align-items: center; gap: clamp(2rem, 6vw, 5rem); min-height: 31rem; margin: 1rem 0 4rem; padding: clamp(2rem, 5vw, 4.5rem); overflow: hidden; border: 1px solid rgba(23,75,77,.18); border-radius: 1.6rem; background: linear-gradient(135deg, #f7f2e3, #ded9c8); box-shadow: 0 1.5rem 5rem rgba(23,32,31,.12); }
+.ink-hero__logo { width: 9rem; margin-bottom: 1rem; }
+.ink-hero h1 { max-width: 14ch; margin: .3rem 0 1rem; color: var(--ink-charcoal); font-size: clamp(2.5rem, 6vw, 4.8rem); line-height: .98; }
+.ink-kicker { margin: 0; color: var(--ink-copper); font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.ink-lede { max-width: 42rem; color: #39413f; font-size: 1.05rem; }
+.ink-actions { display: flex; flex-wrap: wrap; gap: .8rem; margin-top: 1.6rem; }
+.ink-hero__device { width: 100%; filter: drop-shadow(0 1.2rem 1.4rem rgba(23,32,31,.22)); transform: rotate(1deg); }
+.ink-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin: 1.8rem 0 3rem; }
+.ink-card { padding: 1.25rem; border: 1px solid rgba(23,75,77,.18); border-radius: 1rem; background: rgba(242,238,223,.42); }
+.ink-card span { color: var(--ink-copper); font-family: ui-monospace, monospace; font-weight: 800; }
+.ink-card h3 { margin: .65rem 0 .35rem; }
+.ink-card p { margin: 0; font-size: .78rem; }
+@media (max-width: 900px) { .ink-hero { grid-template-columns: 1fr; padding: 2rem; } .ink-hero__device { max-width: 34rem; margin: auto; } .ink-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .ink-hero { min-height: auto; margin-top: 0; padding: 1.35rem; border-radius: 1rem; } .ink-grid { grid-template-columns: 1fr; } }

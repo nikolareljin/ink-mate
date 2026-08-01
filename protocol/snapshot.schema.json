@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://inkmate.dev/schemas/v1/snapshot.schema.json",
+  "title": "InkMate device snapshot",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["protocol_version", "device_id", "timestamp", "cards", "gateway"],
+  "properties": {
+    "protocol_version": {"const": 1},
+    "device_id": {"type": "string", "pattern": "^[a-zA-Z0-9._-]{1,64}$"},
+    "timestamp": {"type": "string", "format": "date-time"},
+    "cards": {
+      "type": "array",
+      "maxItems": 8,
+      "items": {"$ref": "card.schema.json"}
+    },
+    "gateway": {
+      "type": "object",
+      "additionalProperties": {"type": ["string", "number", "boolean", "null"]}
+    }
+  }
+}

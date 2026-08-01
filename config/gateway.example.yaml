@@ -1,0 +1,48 @@
+server:
+  public_base_url: http://192.0.2.10:8080
+  log_transcripts: false
+  audio_retention_seconds: 300
+
+devices:
+  - id: replace-with-device-id
+    token_env: INKMATE_DEVICE_TOKEN
+
+providers:
+  stt:
+    type: faster-whisper
+    model: small.en
+  llm:
+    type: ollama
+    base_url_env: INKMATE_OLLAMA_URL
+    model_env: INKMATE_OLLAMA_MODEL
+  tts:
+    type: piper
+    voice: replace-with-installed-voice
+  cloud_fallback:
+    enabled: false
+    type: openai-compatible
+    api_key_env: OPENAI_API_KEY
+
+workspaces:
+  - name: example-read-only
+    path: /workspaces/example
+    writable: false
+
+actions:
+  confirmation_ttl_seconds: 60
+  templates:
+    - name: example-service-status
+      executable: /usr/bin/systemctl
+      arguments: ["status", "example.service", "--no-pager"]
+      mutating: false
+    - name: example-service-restart
+      executable: /usr/bin/systemctl
+      arguments: ["restart", "example.service"]
+      mutating: true
+      enabled: false
+
+agents:
+  codex:
+    enabled: false
+  claude:
+    enabled: false

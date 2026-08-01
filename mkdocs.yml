@@ -1,0 +1,82 @@
+site_name: InkMate
+site_description: A persistent, local-first e-paper interface for AI and trusted tools.
+site_url: https://nikolareljin.github.io/ink-mate/
+repo_url: https://github.com/nikolareljin/ink-mate
+repo_name: nikolareljin/ink-mate
+docs_dir: docs
+site_dir: site
+
+theme:
+  name: material
+  logo: assets/inkmate-logo.png
+  favicon: assets/favicon.ico
+  font: false
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - toc.follow
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-night
+        name: Use dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-sunny
+        name: Use light mode
+
+nav:
+  - Home: index.md
+  - Get started:
+      - Hardware bring-up: hardware-bring-up.md
+      - Gateway deployment: deployment.md
+      - Troubleshooting: troubleshooting.md
+  - Understand:
+      - Architecture: architecture.md
+      - Hardware: hardware.md
+      - Firmware: firmware.md
+      - Protocol: protocol.md
+      - Security model: security-model.md
+  - Extend:
+      - Extensions: extensions.md
+      - Development and CI: development.md
+      - Roadmap: roadmap.md
+  - Project:
+      - Branding: branding.md
+      - Sources: sources.md
+
+plugins:
+  - search
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+
+extra_css:
+  - stylesheets/extra.css
+
+copyright: Copyright &copy; 2026 InkMate contributors · MIT licensed

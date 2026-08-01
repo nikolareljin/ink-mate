@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://inkmate.dev/schemas/v1/card.schema.json",
+  "title": "InkMate display card",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["kind", "title", "body", "updated_at"],
+  "properties": {
+    "kind": {
+      "type": "string",
+      "enum": ["home", "answer", "tools", "confirmation", "offline", "error"]
+    },
+    "title": {"type": "string", "maxLength": 32},
+    "body": {"type": "string", "maxLength": 240},
+    "footer": {"type": "string", "maxLength": 48, "default": ""},
+    "continuation": {"type": "boolean", "default": false},
+    "severity": {
+      "type": "string",
+      "enum": ["normal", "notice", "warning", "critical"],
+      "default": "normal"
+    },
+    "updated_at": {"type": "string", "format": "date-time"}
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://inkmate.dev/schemas/v1/interaction-response.schema.json",
+  "title": "InkMate interaction response",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["protocol_version", "request_id", "device_id", "timestamp", "transcript", "card"],
+  "properties": {
+    "protocol_version": {"const": 1},
+    "request_id": {"type": "string", "format": "uuid"},
+    "device_id": {"type": "string", "pattern": "^[a-zA-Z0-9._-]{1,64}$"},
+    "timestamp": {"type": "string", "format": "date-time"},
+    "transcript": {"type": "string", "maxLength": 4096},
+    "card": {"$ref": "card.schema.json"},
+    "speech_url": {"type": ["string", "null"]},
+    "pending_action": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["request_id", "action", "target", "expires_at"],
+          "properties": {
+            "request_id": {"type": "string", "format": "uuid"},
+            "action": {"type": "string", "maxLength": 64},
+            "target": {"type": "string", "maxLength": 160},
+            "expires_at": {"type": "string", "format": "date-time"}
+          }
+        }
+      ]
+    },
+    "error": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["code", "message", "retryable"],
+          "properties": {
+            "code": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]+$"},
+            "message": {"type": "string", "maxLength": 240},
+            "retryable": {"type": "boolean"}
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,8 @@
+cmake_minimum_required(VERSION 3.16)
+project(inkmate_core_tests LANGUAGES CXX)
+enable_testing()
+add_executable(inkmate_state_test ../inkmate_state.cpp inkmate_state_test.cpp)
+target_include_directories(inkmate_state_test PRIVATE ../include)
+target_compile_features(inkmate_state_test PRIVATE cxx_std_17)
+target_compile_options(inkmate_state_test PRIVATE -Wall -Wextra -Werror)
+add_test(NAME inkmate_state_test COMMAND inkmate_state_test)

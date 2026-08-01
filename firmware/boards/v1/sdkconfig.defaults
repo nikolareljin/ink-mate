@@ -1,0 +1,3 @@
+CONFIG_INKMATE_BOARD_V1=y
+# Listing expectation only; boot diagnostics are authoritative.
+CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y

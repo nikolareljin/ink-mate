@@ -1,0 +1,14 @@
+{
+  "device_id": "replace-with-device-id",
+  "gateway_url": "http://192.0.2.10:8080",
+  "locale": "en-US",
+  "board_profile": "v2",
+  "display": {
+    "partial_refresh_limit": 10
+  },
+  "power": {
+    "automatic_deep_sleep": false,
+    "ota_enabled": false,
+    "battery_reset_matrix_passed": false
+  }
+}

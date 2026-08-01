@@ -1,0 +1,19 @@
+name: Secrets Scan
+
+on:
+  pull_request:
+  push:
+    branches: ["**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gitleaks:
+    uses: nikolareljin/ci-helpers/.github/workflows/gitleaks-scan.yml@production
+    with:
+      scan_path: "."
+      gitleaks_version: "v8.30.1"
+      fail_on_findings: true
+      upload_artifact: true
