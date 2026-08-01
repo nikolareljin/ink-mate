@@ -1,12 +1,14 @@
 # Sources and evidence
 
-## User-supplied
+## Public product reference
 
 - Product listing: <https://www.aliexpress.us/item/3256810104401869.html>
-- Saved PDF: `ESP32-S3 e-Paper AIoT Board with Touch.pdf`
-- Saved text: `esp32_ink_mate.txt`
 
-The files remain outside the repository and are not redistributed. The text is evidence for the selected `With Bat No Touch` option, four generic variants, listed features, and one customer's battery-reset report. Marketplace AI summaries, reviews, dimensions, and marketing are not authoritative engineering specifications.
+The repository records only the public listing URL and engineering conclusions
+that still require hardware validation. It does not store or redistribute
+listing exports, downloaded pages, vendor PDFs, screenshots, review captures,
+or other source artifacts. Marketplace AI summaries, reviews, dimensions, and
+marketing are not authoritative engineering specifications.
 
 ## Upstream references
 
@@ -18,9 +20,9 @@ Record exact commits and licenses before copying code. A related-board example i
 
 | Statement | Evidence status |
 | --- | --- |
-| Battery-equipped, non-touch selected option | Supplied listing capture |
+| Battery-equipped, non-touch selected option | Linked public listing |
 | ESP32-S3, display, Wi-Fi/BLE, RTC, SHTC3, TF, audio | Vendor claim |
-| PCF85063 RTC | Vendor claim in supplied text |
+| PCF85063 RTC | Vendor claim in linked public listing |
 | ES8311 codec | Working assumption |
 | V2 board | Working assumption |
 | 4 MB flash / 2 MB PSRAM | Working assumption |
