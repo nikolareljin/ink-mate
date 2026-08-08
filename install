@@ -1,0 +1,87 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage: ./install [OPTIONS]
+
+Install project-local developer dependencies. By default this initializes
+submodules, installs ESP-IDF 6.0.2 in .tools/esp-idf, creates gateway/.venv
+with test dependencies, and creates .venv-docs with documentation dependencies.
+
+Options:
+  --esp-idf-dir DIR  Use or install ESP-IDF in DIR (default: .tools/esp-idf).
+  --skip-esp-idf     Do not install ESP-IDF and its ESP32-S3 tools.
+  --skip-gateway     Do not create/install the gateway virtual environment.
+  --skip-docs        Do not create/install the documentation virtual environment.
+  --with-audio       Include the optional local audio dependencies for the gateway.
+  --with-docker      Install/start Docker through script-helpers when needed.
+  -h, --help         Show this help text.
+EOF
+}
+
+repo_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+idf_dir="$repo_dir/.tools/esp-idf"
+install_idf=true
+install_gateway=true
+install_docs=true
+with_audio=false
+with_docker=false
+
+while [[ "$#" -gt 0 ]]; do
+  case "$1" in
+    --esp-idf-dir)
+      [[ "$#" -ge 2 ]] || { echo "--esp-idf-dir requires a directory" >&2; exit 2; }
+      idf_dir=$2; shift ;;
+    --skip-esp-idf) install_idf=false ;;
+    --skip-gateway) install_gateway=false ;;
+    --skip-docs) install_docs=false ;;
+    --with-audio) with_audio=true ;;
+    --with-docker) with_docker=true ;;
+    -h|--help) usage; exit 0 ;;
+    *) echo "unknown option: $1" >&2; usage >&2; exit 2 ;;
+  esac
+  shift
+done
+
+"$repo_dir/update"
+# shellcheck source=scripts/script-helpers/helpers.sh
+source "$repo_dir/scripts/script-helpers/helpers.sh"
+shlib_import logging python os docker_install
+
+if [[ "$with_docker" == true ]]; then
+  print_info "Ensuring Docker is installed and reachable"
+  ensure_docker
+fi
+
+if [[ "$install_idf" == true ]]; then
+  "$repo_dir/scripts/install-esp-idf.sh" "$idf_dir"
+fi
+
+python_bin=""
+if [[ "$install_gateway" == true || "$install_docs" == true ]]; then
+  python_bin=$(python_resolve_3 "" 3 11) || {
+    log_error "Python 3.11 or newer is required for the gateway and documentation."
+    exit 1
+  }
+fi
+
+if [[ "$install_gateway" == true ]]; then
+  gateway_python=$(python_ensure_venv "$python_bin" "$repo_dir/gateway/.venv")
+  gateway_deps='.[test]'
+  if [[ "$with_audio" == true ]]; then
+    gateway_deps='.[test,audio]'
+  fi
+  print_info "Installing gateway dependencies"
+  "$gateway_python" -m pip install --upgrade pip
+  (cd "$repo_dir/gateway" && "$gateway_python" -m pip install -e "$gateway_deps")
+fi
+
+if [[ "$install_docs" == true ]]; then
+  docs_python=$(python_ensure_venv "$python_bin" "$repo_dir/.venv-docs")
+  print_info "Installing documentation dependencies"
+  "$docs_python" -m pip install --upgrade pip
+  "$docs_python" -m pip install -r "$repo_dir/requirements-docs.txt"
+fi
+
+print_success "Installation complete"

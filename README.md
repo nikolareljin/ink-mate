@@ -40,6 +40,24 @@ git clone --recurse-submodules https://github.com/nikolareljin/ink-mate.git
 
 ## Quick start
 
+### Local commands
+
+The root command suite uses the `scripts/script-helpers` submodule for shared
+logging, Python, and Docker behavior. Each command accepts `--help`.
+
+```sh
+./update                         # initialize/update pinned submodules
+./install                        # ESP-IDF, gateway test, and docs dependencies
+./build                          # firmware (V1 and V2), gateway image, and docs
+./test                           # gateway, firmware, and documentation checks
+./deploy --profile v2 --port /dev/ttyACM0 --hardware-verified
+```
+
+`./install --with-docker` explicitly opts into system Docker installation. Use
+`./install --with-audio` to add optional local STT dependencies. The default
+installation paths are ignored by Git; see each command's `--help` for
+component-selection and path options.
+
 ### Gateway
 
 1. Copy `.env.example` to `.env` and replace every placeholder.

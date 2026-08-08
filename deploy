@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage: ./deploy --profile v1|v2 --port /dev/ttyDEVICE --hardware-verified [OPTIONS]
+
+Build and flash one explicitly identified board profile over USB. The required
+--hardware-verified acknowledgement is permitted only after matching the PCB
+silkscreen and detected flash/PSRAM to the selected profile.
+
+Options:
+  --profile PROFILE   Required board profile: v1 or v2.
+  --port DEVICE       Required serial device path, for example /dev/ttyACM0.
+  --hardware-verified Required acknowledgement after physical verification.
+  --skip-build        Flash an already-built profile without rebuilding it.
+  --esp-idf-dir DIR   ESP-IDF directory (default: .tools/esp-idf).
+  -h, --help          Show this help text.
+EOF
+}
+
+repo_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+idf_dir="$repo_dir/.tools/esp-idf"
+profile=""
+port=""
+verified=false
+skip_build=false
+
+while [[ "$#" -gt 0 ]]; do
+  case "$1" in
+    --profile) [[ "$#" -ge 2 ]] || { echo "--profile requires v1 or v2" >&2; exit 2; }; profile=$2; shift ;;
+    --port) [[ "$#" -ge 2 ]] || { echo "--port requires a device path" >&2; exit 2; }; port=$2; shift ;;
+    --hardware-verified) verified=true ;;
+    --skip-build) skip_build=true ;;
+    --esp-idf-dir) [[ "$#" -ge 2 ]] || { echo "--esp-idf-dir requires a directory" >&2; exit 2; }; idf_dir=$2; shift ;;
+    -h|--help) usage; exit 0 ;;
+    *) echo "unknown option: $1" >&2; usage >&2; exit 2 ;;
+  esac
+  shift
+done
+
+case "$profile" in v1|v2) ;; *) echo "--profile v1 or v2 is required" >&2; exit 2 ;; esac
+[[ -n "$port" ]] || { echo "--port is required" >&2; exit 2; }
+[[ "$verified" == true ]] || { echo "--hardware-verified is required" >&2; exit 2; }
+[[ -e "$port" ]] || { echo "serial device not found: $port" >&2; exit 1; }
+[[ -f "$idf_dir/export.sh" ]] || { echo "ESP-IDF is missing; run ./install first." >&2; exit 1; }
+
+# shellcheck source=scripts/script-helpers/helpers.sh
+source "$repo_dir/scripts/script-helpers/helpers.sh"
+shlib_import logging
+# shellcheck disable=SC1090
+source "$idf_dir/export.sh"
+if [[ "$skip_build" == false ]]; then
+  print_info "Building firmware profile $profile"
+  "$repo_dir/scripts/build-firmware.sh" "$profile"
+fi
+print_info "Flashing verified $profile hardware on $port"
+INKMATE_HARDWARE_VERIFIED=yes "$repo_dir/scripts/flash-firmware.sh" "$profile" "$port"

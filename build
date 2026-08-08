@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage: ./build [OPTIONS]
+
+Build all components by default. Select one or more component flags to narrow
+the build.
+
+Options:
+  --firmware          Build firmware for --profile (default profile: both).
+  --gateway           Build the gateway container image.
+  --docs              Build the documentation site strictly.
+  --profile PROFILE   Firmware profile: v1, v2, or both (default: both).
+  --esp-idf-dir DIR   ESP-IDF directory (default: .tools/esp-idf).
+  -h, --help          Show this help text.
+EOF
+}
+
+repo_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+idf_dir="$repo_dir/.tools/esp-idf"
+build_firmware=false
+build_gateway=false
+build_docs=false
+selected=false
+profile=both
+
+while [[ "$#" -gt 0 ]]; do
+  case "$1" in
+    --firmware) build_firmware=true; selected=true ;;
+    --gateway) build_gateway=true; selected=true ;;
+    --docs) build_docs=true; selected=true ;;
+    --profile)
+      [[ "$#" -ge 2 ]] || { echo "--profile requires v1, v2, or both" >&2; exit 2; }
+      profile=$2; shift ;;
+    --esp-idf-dir)
+      [[ "$#" -ge 2 ]] || { echo "--esp-idf-dir requires a directory" >&2; exit 2; }
+      idf_dir=$2; shift ;;
+    -h|--help) usage; exit 0 ;;
+    *) echo "unknown option: $1" >&2; usage >&2; exit 2 ;;
+  esac
+  shift
+done
+
+case "$profile" in v1|v2|both) ;; *) echo "--profile must be v1, v2, or both" >&2; exit 2 ;; esac
+if [[ "$selected" == false ]]; then build_firmware=true; build_gateway=true; build_docs=true; fi
+
+# shellcheck source=scripts/script-helpers/helpers.sh
+source "$repo_dir/scripts/script-helpers/helpers.sh"
+shlib_import logging docker
+
+if [[ "$build_firmware" == true ]]; then
+  [[ -f "$idf_dir/export.sh" ]] || { log_error "ESP-IDF is missing; run ./install first."; exit 1; }
+  # shellcheck disable=SC1090
+  source "$idf_dir/export.sh"
+  for board_profile in $([[ "$profile" == both ]] && echo "v1 v2" || echo "$profile"); do
+    print_info "Building firmware profile $board_profile"
+    "$repo_dir/scripts/build-firmware.sh" "$board_profile"
+  done
+fi
+
+if [[ "$build_gateway" == true ]]; then
+  check_docker
+  print_info "Building gateway container"
+  (cd "$repo_dir" && docker_compose build gateway)
+fi
+
+if [[ "$build_docs" == true ]]; then
+  docs_mkdocs="$repo_dir/.venv-docs/bin/mkdocs"
+  [[ -x "$docs_mkdocs" ]] || { log_error "Documentation dependencies are missing; run ./install first."; exit 1; }
+  print_info "Building documentation site"
+  (cd "$repo_dir" && "$docs_mkdocs" build --strict)
+fi
+
+print_success "Requested builds completed"

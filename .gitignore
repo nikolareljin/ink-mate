@@ -13,6 +13,7 @@ __pycache__/
 .coverage
 htmlcov/
 .venv/
+.venv-docs/
 venv/
 
 firmware/build/
