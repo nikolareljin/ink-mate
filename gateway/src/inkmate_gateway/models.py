@@ -14,7 +14,7 @@ class StrictModel(BaseModel):
 
 
 class Card(StrictModel):
-    kind: Literal["home", "answer", "tools", "confirmation", "offline", "error"]
+    kind: Literal["home", "answer", "tools", "capture", "status", "confirmation", "offline", "error"]
     title: str = Field(max_length=32)
     body: str = Field(max_length=240)
     footer: str = Field(default="", max_length=48)
@@ -60,3 +60,15 @@ class ActionResult(StrictModel):
     request_id: str
     status: Literal["executed", "cancelled"]
     output: str | None = None
+
+
+class WorkItem(StrictModel):
+    """A reviewable, local-first result of a voice capture."""
+
+    id: str = Field(pattern=r"^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$")
+    project: str = Field(min_length=1, max_length=64)
+    title: str = Field(min_length=1, max_length=120)
+    summary: str = Field(max_length=600)
+    next_steps: list[str] = Field(default_factory=list, max_length=5)
+    path: str = Field(max_length=512)
+    issue_url: str | None = None

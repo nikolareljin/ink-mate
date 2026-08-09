@@ -35,6 +35,8 @@ struct BootReport {
     std::uint32_t flash_bytes{0};
     std::uint32_t psram_bytes{0};
     bool pins_verified{false};
+    bool rtc_detected{false};
+    bool environment_sensor_detected{false};
 };
 
 BootReport initialize_board_safely();

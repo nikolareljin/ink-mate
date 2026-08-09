@@ -15,4 +15,5 @@ if [ "${INKMATE_HARDWARE_VERIFIED:-}" != "yes" ]; then
   echo "Verify PCB revision and memory, then set INKMATE_HARDWARE_VERIFIED=yes." >&2
   exit 1
 fi
-INKMATE_BOARD_PROFILE=$profile idf.py -C "$repo_dir/firmware" -B "$repo_dir/firmware/build/$profile" -p "$port" flash monitor
+"$repo_dir/scripts/backup-flash.sh" "$profile" "$port"
+INKMATE_BOARD_PROFILE=$profile idf.py -C "$repo_dir/firmware" -B "$repo_dir/firmware/build/$profile" -p "$port" flash
