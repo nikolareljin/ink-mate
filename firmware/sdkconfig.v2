@@ -1,4 +1,10 @@
 # The inspected V2 candidate has embedded 8 MB flash. Keep this profile explicit.
 CONFIG_ESPTOOLPY_FLASHSIZE_8MB=y
+# ESP32-S3-PICO-1-N8R8 has 8 MB octal PSRAM; 80 MHz is the stable,
+# non-experimental ESP-IDF setting.
+CONFIG_SPIRAM=y
+CONFIG_SPIRAM_MODE_OCT=y
+CONFIG_SPIRAM_TYPE_AUTO=y
+CONFIG_SPIRAM_SPEED_80M=y
 # CONFIG_INKMATE_BOARD_V1 is not set
 CONFIG_INKMATE_BOARD_V2=y
