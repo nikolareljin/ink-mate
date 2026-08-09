@@ -2,6 +2,7 @@
 
 #include "board_profile.h"
 #include "driver/i2c_master.h"
+#include "driver/gpio.h"
 #include "esp_chip_info.h"
 #include "esp_flash.h"
 #include "esp_log.h"
@@ -20,6 +21,27 @@ bool required_pins_verified() {
            p.epaper_dc != GPIO_NUM_NC && p.epaper_cs != GPIO_NUM_NC &&
            p.epaper_sclk != GPIO_NUM_NC && p.epaper_mosi != GPIO_NUM_NC;
 }
+
+void assert_power_hold_if_verified() {
+    const auto& pins = inkmate::board::kPins;
+    if (pins.power_hold == GPIO_NUM_NC) return;
+
+    gpio_config_t config{};
+    config.pin_bit_mask = 1ULL << pins.power_hold;
+    config.mode = GPIO_MODE_OUTPUT;
+    const esp_err_t config_result = gpio_config(&config);
+    if (config_result != ESP_OK) {
+        ESP_LOGW(kTag, "BAT_Control configuration failed: %s", esp_err_to_name(config_result));
+        return;
+    }
+    const esp_err_t level_result = gpio_set_level(pins.power_hold, 1);
+    if (level_result != ESP_OK) {
+        ESP_LOGW(kTag, "BAT_Control assertion failed: %s", esp_err_to_name(level_result));
+        return;
+    }
+    ESP_LOGI(kTag, "BAT_Control asserted on GPIO %d", static_cast<int>(pins.power_hold));
+}
+
 void probe_i2c_devices(inkmate::BootReport* report) {
     const auto& pins = inkmate::board::kPins;
     if (pins.i2c_sda == GPIO_NUM_NC || pins.i2c_scl == GPIO_NUM_NC) return;
@@ -68,15 +90,13 @@ BootReport initialize_board_safely() {
              static_cast<unsigned long>(report.flash_bytes),
              static_cast<unsigned long>(report.psram_bytes),
              static_cast<int>(esp_reset_reason()));
+    assert_power_hold_if_verified();
     // This only emits address probes on the verified shared peripheral bus. It does
     // not power, configure, or drive the display, microphone, amplifier, or codec.
     probe_i2c_devices(&report);
     if (!report.pins_verified) {
         ESP_LOGW(kTag, "GPIO map is unverified; display/audio/sensors/power-hold remain disabled");
     }
-    // Never drive power_hold here unless the selected profile has a verified value.
-    // Once populated, this is the earliest application-level place to assert it; a
-    // board-specific bootloader hook is preferable if battery testing requires earlier.
     return report;
 }
 
