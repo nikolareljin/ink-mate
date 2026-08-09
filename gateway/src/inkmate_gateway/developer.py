@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from datetime import timedelta
+from datetime import datetime, timedelta
 from pathlib import Path
 from uuid import uuid4
 
@@ -38,9 +38,21 @@ class ConfirmationService:
     def __init__(self, ttl: int):
         self.ttl = ttl
         self.pending: dict[str, tuple[ActionProposal, str, Callable[[], Awaitable[str]]]] = {}
-        self.used: set[str] = set()
+        self.used: dict[str, datetime] = {}
+
+    def _prune(self) -> None:
+        now = utcnow()
+        self.used = {request_id: expires_at for request_id, expires_at in self.used.items() if expires_at > now}
+        # Retain expired proposals for one TTL interval so their owners receive
+        # an expiry response rather than an indistinguishable unknown-ID error.
+        self.pending = {
+            request_id: item
+            for request_id, item in self.pending.items()
+            if item[0].expires_at + timedelta(seconds=self.ttl) > now
+        }
 
     def propose(self, action: str, target: str, device_id: str, operation: Callable[[], Awaitable[str]]) -> ActionProposal:
+        self._prune()
         request_id = str(uuid4())
         proposal = ActionProposal(
             request_id=request_id,
@@ -52,24 +64,27 @@ class ConfirmationService:
         return proposal
 
     async def confirm(self, request_id: str, device_id: str) -> str:
+        self._prune()
         if request_id in self.used or request_id not in self.pending:
             raise KeyError(request_id)
-        proposal, owner, operation = self.pending.pop(request_id)
-        self.used.add(request_id)
+        proposal, owner, operation = self.pending[request_id]
         if owner != device_id:
             raise PermissionError(request_id)
+        self.pending.pop(request_id)
+        self.used[request_id] = utcnow() + timedelta(seconds=self.ttl)
         if proposal.expires_at <= utcnow():
             raise TimeoutError(request_id)
         return await operation()
 
     def cancel(self, request_id: str, device_id: str) -> None:
+        self._prune()
         if request_id in self.used or request_id not in self.pending:
             raise KeyError(request_id)
         _, owner, _ = self.pending[request_id]
         if owner != device_id:
             raise PermissionError(request_id)
         self.pending.pop(request_id)
-        self.used.add(request_id)
+        self.used[request_id] = utcnow() + timedelta(seconds=self.ttl)
 
 
 class WorkItemService:
@@ -111,11 +126,42 @@ class WorkItemService:
     def recent(self, project: str | None, limit: int = 5) -> list[WorkItem]:
         name, root = self.project_root(project)
         directory = root / ".inkmate" / "captures"
-        result: list[WorkItem] = []
-        for path in sorted(directory.glob("*.md"), reverse=True)[:limit] if directory.is_dir() else []:
-            title = next((line[2:] for line in path.read_text(encoding="utf-8").splitlines() if line.startswith("# ")), path.stem)
-            result.append(WorkItem(id=path.stem[-36:], project=name, title=title[:120], summary="", path=str(path.relative_to(root))))
-        return result
+        paths = sorted(directory.glob("*.md"), reverse=True)[:limit] if directory.is_dir() else []
+        return [self._read(path, name, root) for path in paths]
+
+    def load(self, item_id: str) -> WorkItem:
+        if not re.fullmatch(r"[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}", item_id):
+            raise KeyError(item_id)
+        for name, root in self.projects.items():
+            directory = root / ".inkmate" / "captures"
+            for path in directory.glob(f"*-{item_id}.md") if directory.is_dir() else []:
+                resolved = path.resolve()
+                if root in resolved.parents and resolved.is_file():
+                    return self._read(resolved, name, root)
+        raise KeyError(item_id)
+
+    @staticmethod
+    def _read(path: Path, project: str, root: Path) -> WorkItem:
+        text = path.read_text(encoding="utf-8")
+        lines = text.splitlines()
+        title = next((line[2:] for line in lines if line.startswith("# ")), path.stem)
+        item_id = next((line.removeprefix("- ID: ") for line in lines if line.startswith("- ID: ")), path.stem[-36:])
+
+        def section(name: str) -> list[str]:
+            try:
+                start = lines.index(f"## {name}") + 1
+            except ValueError:
+                return []
+            end = next((index for index in range(start, len(lines)) if lines[index].startswith("## ")), len(lines))
+            return [line for line in lines[start:end] if line]
+
+        summary = " ".join(section("Summary"))[:600]
+        next_steps = [line.removeprefix("- ")[:160] for line in section("Next steps") if line.startswith("- ")]
+        issue_url = next((line.removeprefix("GitHub issue: ") for line in lines if line.startswith("GitHub issue: ")), None)
+        return WorkItem(
+            id=item_id, project=project, title=title[:120], summary=summary,
+            next_steps=next_steps[:5], path=str(path.relative_to(root)), issue_url=issue_url,
+        )
 
     def attach_issue(self, item: WorkItem, issue_url: str) -> None:
         _, root = self.project_root(item.project)

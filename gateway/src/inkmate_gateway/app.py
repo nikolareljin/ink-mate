@@ -107,8 +107,12 @@ def create_app(settings: Settings | None = None, *, stt=None, tts=None, chat=Non
                 raise HTTPException(404, "unknown or already used action") from exc
             except TimeoutError as exc:
                 raise HTTPException(410, "action expired") from exc
+            except PermissionError as exc:
+                raise HTTPException(403, "action belongs to another device") from exc
         except TimeoutError as exc:
             raise HTTPException(410, "action expired") from exc
+        except PermissionError as exc:
+            raise HTTPException(403, "action belongs to another device") from exc
         except RuntimeError as exc:
             raise HTTPException(502, str(exc)) from exc
         return ActionResult(request_id=request_id, status="executed", output=output)
@@ -122,6 +126,8 @@ def create_app(settings: Settings | None = None, *, stt=None, tts=None, chat=Non
                 app.state.confirmations.cancel(request_id, device_id)
             except KeyError as exc:
                 raise HTTPException(404, "unknown or already used action") from exc
+            except PermissionError as exc:
+                raise HTTPException(403, "action belongs to another device") from exc
         return ActionResult(request_id=request_id, status="cancelled")
 
     @app.post("/v1/captures", response_model=InteractionResponse)
@@ -135,6 +141,8 @@ def create_app(settings: Settings | None = None, *, stt=None, tts=None, chat=Non
         if not transcript or len(transcript) > 4096:
             raise HTTPException(422, "transcript is required and must be at most 4096 characters")
         project = payload.get("project")
+        if project is not None and not isinstance(project, str):
+            raise HTTPException(422, "project must be a string")
         try:
             intent = classify_voice_intent(transcript, cfg.projects)
             project = project or intent.project
@@ -180,7 +188,12 @@ def create_app(settings: Settings | None = None, *, stt=None, tts=None, chat=Non
     async def propose_issue(item_id: str, device_id: str = Depends(authenticate)):
         item = app.state.captured_items.get(item_id)
         if item is None:
-            raise HTTPException(404, "unknown work item")
+            try:
+                item = app.state.work_items.load(item_id)
+            except KeyError as exc:
+                raise HTTPException(404, "unknown work item") from exc
+        if item.issue_url:
+            raise HTTPException(409, "work item already has a GitHub issue")
         repository = cfg.github_repositories.get(item.project)
         if not cfg.github_token or not repository:
             raise HTTPException(503, "GITHUB_ISSUES_UNAVAILABLE")

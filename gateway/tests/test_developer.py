@@ -70,3 +70,32 @@ async def test_capture_requires_confirmation_before_writing(tmp_path):
         assert items.status_code == 200
         assert items.json()[0]["project"] == "inbox"
         assert "Capture plan" in (tmp_path / confirmed.json()["output"]).read_text()
+
+
+async def test_persisted_work_item_can_create_one_issue_after_restart(tmp_path):
+    settings = Settings(
+        device_secrets="desk:secret", work_item_root=str(tmp_path), default_project="inbox",
+        projects_json=json.dumps({"inbox": str(tmp_path)}), github_token="token",
+        github_repositories_json=json.dumps({"inbox": "owner/repository"}),
+    )
+
+    class GitHub:
+        async def create(self, item):
+            return "https://example.test/issues/1"
+
+    app = create_app(settings, stt=STT(), tts=TTS(), chat=Chat(), github=GitHub())
+    payload = json.dumps({"transcript": "Capture plan for inbox"}).encode()
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        capture = await signed(client, "POST", "/v1/captures", payload, {"Content-Type": "application/json"})
+        saved = await signed(client, "POST", f"/v1/actions/{capture.json()['pending_action']['request_id']}/confirm")
+        item_id = (await signed(client, "GET", "/v1/work-items")).json()[0]["id"]
+        app.state.captured_items.clear()
+
+        proposed = await signed(client, "POST", f"/v1/work-items/{item_id}/issue")
+        assert proposed.status_code == 200
+        confirmed = await signed(client, "POST", f"/v1/actions/{proposed.json()['pending_action']['request_id']}/confirm")
+        assert confirmed.json()["output"] == "https://example.test/issues/1"
+        assert "GitHub issue: https://example.test/issues/1" in (tmp_path / saved.json()["output"]).read_text()
+
+        duplicate = await signed(client, "POST", f"/v1/work-items/{item_id}/issue")
+        assert duplicate.status_code == 409

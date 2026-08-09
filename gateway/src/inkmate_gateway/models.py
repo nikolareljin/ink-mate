@@ -65,7 +65,7 @@ class ActionResult(StrictModel):
 class WorkItem(StrictModel):
     """A reviewable, local-first result of a voice capture."""
 
-    id: str = Field(pattern=r"^[a-f0-9-]{36}$")
+    id: str = Field(pattern=r"^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$")
     project: str = Field(min_length=1, max_length=64)
     title: str = Field(min_length=1, max_length=120)
     summary: str = Field(max_length=600)

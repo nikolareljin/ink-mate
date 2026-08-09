@@ -29,12 +29,12 @@ def app():
 @pytest.fixture
 async def client(app):
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c: yield c
-async def signed(client, method, path, content=b"", headers=None):
+async def signed(client, method, path, content=b"", headers=None, *, device="desk", secret=b"secret"):
     timestamp = str(int(time.time()))
     body_hash = hashlib.sha256(content).hexdigest()
     canonical = f"{method}\n{path}\n{timestamp}\n{body_hash}".encode()
-    signature = hmac.new(b"secret", canonical, hashlib.sha256).hexdigest()
-    auth = {"X-InkMate-Device": "desk", "X-InkMate-Timestamp": timestamp,
+    signature = hmac.new(secret, canonical, hashlib.sha256).hexdigest()
+    auth = {"X-InkMate-Device": device, "X-InkMate-Timestamp": timestamp,
             "X-InkMate-Signature": signature}
     auth.update(headers or {})
     return await client.request(method, path, content=content, headers=auth)
@@ -80,3 +80,17 @@ async def test_action_cancel(client, app):
     proposal = app.state.actions.propose("echo", device_id="desk")
     assert (await signed(client, "POST", f"/v1/actions/{proposal.request_id}/cancel")).json()["status"] == "cancelled"
     assert (await signed(client, "POST", f"/v1/actions/{proposal.request_id}/confirm")).status_code == 404
+
+
+async def test_action_confirmation_is_forbidden_to_another_device():
+    settings = Settings(device_secrets="desk:secret,other:other-secret")
+    actions = ActionService({"echo": SafeCommand(("/bin/echo", "safe"), "Say safe")})
+    app = create_app(settings, stt=STT(), tts=TTS(), chat=Chat(), actions=actions)
+    proposal = actions.propose("echo", device_id="desk")
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        rejected = await signed(
+            client, "POST", f"/v1/actions/{proposal.request_id}/confirm",
+            device="other", secret=b"other-secret",
+        )
+        accepted = await signed(client, "POST", f"/v1/actions/{proposal.request_id}/confirm")
+    assert rejected.status_code == 403
