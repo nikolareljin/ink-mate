@@ -41,3 +41,4 @@ site/
 .DS_Store
 .idea/
 .vscode/
+firmware/backups/

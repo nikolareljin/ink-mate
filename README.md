@@ -92,7 +92,11 @@ do not expose it directly to the internet.
    ```
 
 Never guess the board profile. The flash helper requires an explicit profile
-and a second acknowledgement if battery-reset validation is incomplete.
+and a second acknowledgement if battery-reset validation is incomplete. Before
+every write it creates a full, timestamped flash dump under
+`firmware/backups/` and records its SHA-256 checksum. Backups may contain
+stored Wi-Fi credentials, remain local-only, and are ignored by Git. Use
+`./scripts/backup-flash.sh v2 /dev/ttyACM0` to make a backup without flashing.
 
 ## Intended controls
 
