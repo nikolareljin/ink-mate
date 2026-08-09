@@ -42,11 +42,16 @@ done
 case "$profile" in v1|v2) ;; *) echo "--profile v1 or v2 is required" >&2; exit 2 ;; esac
 [[ -n "$port" ]] || { echo "--port is required" >&2; exit 2; }
 [[ "$verified" == true ]] || { echo "--hardware-verified is required" >&2; exit 2; }
-[[ -e "$port" ]] || { echo "serial device not found: $port" >&2; exit 1; }
+[[ -c "$port" ]] || { echo "serial device is not a character device: $port" >&2; exit 1; }
 [[ -f "$idf_dir/export.sh" ]] || { echo "ESP-IDF is missing; run ./install first." >&2; exit 1; }
 
+helpers="$repo_dir/scripts/script-helpers/helpers.sh"
+[[ -f "$helpers" ]] || {
+  echo "script-helpers is missing; run ./update first." >&2
+  exit 1
+}
 # shellcheck source=scripts/script-helpers/helpers.sh
-source "$repo_dir/scripts/script-helpers/helpers.sh"
+source "$helpers"
 shlib_import logging
 # shellcheck disable=SC1090
 source "$idf_dir/export.sh"

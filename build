@@ -46,8 +46,13 @@ done
 case "$profile" in v1|v2|both) ;; *) echo "--profile must be v1, v2, or both" >&2; exit 2 ;; esac
 if [[ "$selected" == false ]]; then build_firmware=true; build_gateway=true; build_docs=true; fi
 
+helpers="$repo_dir/scripts/script-helpers/helpers.sh"
+[[ -f "$helpers" ]] || {
+  echo "script-helpers is missing; run ./update first." >&2
+  exit 1
+}
 # shellcheck source=scripts/script-helpers/helpers.sh
-source "$repo_dir/scripts/script-helpers/helpers.sh"
+source "$helpers"
 shlib_import logging docker
 
 if [[ "$build_firmware" == true ]]; then

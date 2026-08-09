@@ -26,6 +26,7 @@ fi
 
 if [[ ! -d "$idf_dir" ]]; then
   echo "Cloning ESP-IDF $idf_version into $idf_dir"
+  mkdir -p -- "$(dirname -- "$idf_dir")"
   git clone --branch "$idf_version" --depth 1 --recursive \
     https://github.com/espressif/esp-idf.git "$idf_dir"
 fi
