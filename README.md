@@ -143,3 +143,11 @@ security boundaries are described in [docs/protocol.md](docs/protocol.md) and
 InkMate is licensed under the [MIT License](LICENSE). Third-party board and
 driver code must retain its original notices and be recorded in attribution
 documentation before it is vendored.
+
+---
+
+## Clone traffic
+
+![Clone traffic](https://raw.githubusercontent.com/nikolareljin/stats/main/charts/ink-mate.svg)
+
+_Updated daily. Total and unique cloners over the last 14 days._
