@@ -48,6 +48,7 @@ nav:
       - Protocol: protocol.md
       - Security model: security-model.md
   - Extend:
+      - Voice developer cockpit: voice-developer-cockpit.md
       - Extensions: extensions.md
       - Development and CI: development.md
       - Roadmap: roadmap.md

@@ -5,6 +5,7 @@ import time
 from fastapi import Body, Depends, FastAPI, Header, HTTPException, Request
 from fastapi.responses import Response
 
+from .developer import ConfirmationService, GitHubIssueService, WorkItemService, classify_voice_intent
 from .config import Settings, get_settings
 from .models import ActionResult, Card, ErrorDetail, InteractionResponse, Snapshot
 from .services import ActionService, AudioStore, FasterWhisperSTT, HttpTTS, OllamaProvider, SilentTTS, UnavailableSTT, host_health
@@ -17,10 +18,19 @@ def _default_tts(cfg: Settings):
 
 
 
-def create_app(settings: Settings | None = None, *, stt=None, tts=None, chat=None, actions=None) -> FastAPI:
+def create_app(settings: Settings | None = None, *, stt=None, tts=None, chat=None, actions=None, confirmations=None, work_items=None, github=None) -> FastAPI:
     cfg = settings or get_settings()
-    app = FastAPI(title="InkMate Gateway", version="0.1.0")
+    app = FastAPI(title="InkMate Gateway", version="0.2.0")
     app.state.settings = cfg
+    configured_work_items = work_items
+    if configured_work_items is None and cfg.work_item_root and cfg.projects:
+        configured_work_items = WorkItemService(cfg.work_item_root, cfg.projects, cfg.default_project)
+    app.state.work_items = configured_work_items
+    app.state.confirmations = confirmations or ConfirmationService(cfg.action_ttl_seconds)
+    app.state.github = github or GitHubIssueService(
+        cfg.github_token, cfg.github_api_url, cfg.github_repositories, cfg.github_labels
+    )
+    app.state.captured_items = {}
     app.state.stt = stt or _default_stt(cfg)
     app.state.tts = tts or _default_tts(cfg)
     app.state.chat = chat or OllamaProvider(cfg.ollama_url, cfg.ollama_model)
@@ -88,17 +98,113 @@ def create_app(settings: Settings | None = None, *, stt=None, tts=None, chat=Non
 
     @app.post("/v1/actions/{request_id}/confirm", response_model=ActionResult)
     async def confirm(request_id: str, device_id: str = Depends(authenticate)):
-        try: output = await app.state.actions.confirm(request_id, device_id=device_id)
-        except KeyError as exc: raise HTTPException(404, "unknown or already used action") from exc
-        except TimeoutError as exc: raise HTTPException(410, "action expired") from exc
-        except RuntimeError as exc: raise HTTPException(502, str(exc)) from exc
+        try:
+            output = await app.state.actions.confirm(request_id, device_id=device_id)
+        except KeyError:
+            try:
+                output = await app.state.confirmations.confirm(request_id, device_id)
+            except KeyError as exc:
+                raise HTTPException(404, "unknown or already used action") from exc
+            except TimeoutError as exc:
+                raise HTTPException(410, "action expired") from exc
+        except TimeoutError as exc:
+            raise HTTPException(410, "action expired") from exc
+        except RuntimeError as exc:
+            raise HTTPException(502, str(exc)) from exc
         return ActionResult(request_id=request_id, status="executed", output=output)
 
     @app.post("/v1/actions/{request_id}/cancel", response_model=ActionResult)
     async def cancel(request_id: str, device_id: str = Depends(authenticate)):
-        try: app.state.actions.cancel(request_id, device_id=device_id)
-        except KeyError as exc: raise HTTPException(404, "unknown or already used action") from exc
+        try:
+            app.state.actions.cancel(request_id, device_id=device_id)
+        except KeyError:
+            try:
+                app.state.confirmations.cancel(request_id, device_id)
+            except KeyError as exc:
+                raise HTTPException(404, "unknown or already used action") from exc
         return ActionResult(request_id=request_id, status="cancelled")
+
+    @app.post("/v1/captures", response_model=InteractionResponse)
+    async def capture(
+        payload: dict = Body(...),
+        device_id: str = Depends(authenticate),
+    ):
+        if app.state.work_items is None:
+            raise HTTPException(503, "WORK_ITEMS_UNAVAILABLE")
+        transcript = str(payload.get("transcript", "")).strip()
+        if not transcript or len(transcript) > 4096:
+            raise HTTPException(422, "transcript is required and must be at most 4096 characters")
+        project = payload.get("project")
+        try:
+            intent = classify_voice_intent(transcript, cfg.projects)
+            project = project or intent.project
+            summary = (await app.state.chat.query(
+                "Summarize this voice capture in one concise paragraph with the next action: " + transcript
+            )).strip()[:600]
+            name, _ = app.state.work_items.project_root(project)
+        except KeyError as exc:
+            raise HTTPException(422, "UNKNOWN_PROJECT") from exc
+        except RuntimeError as exc:
+            raise HTTPException(503, str(exc)) from exc
+
+        async def save() -> str:
+            item = app.state.work_items.create(
+                transcript=transcript, summary=summary, project=name, device_id=device_id
+            )
+            app.state.captured_items[item.id] = item
+            return item.path
+
+        proposal = app.state.confirmations.propose(
+            "save_capture", f"{name}: voice capture", device_id, save
+        )
+        return InteractionResponse(
+            device_id=device_id,
+            transcript=transcript,
+            card=Card(
+                kind="confirmation", title="Save capture",
+                body=summary[:240], footer="Short press: save · Hold: cancel",
+            ),
+            pending_action=proposal,
+        )
+
+    @app.get("/v1/work-items")
+    async def work_items(project: str | None = None, device_id: str = Depends(authenticate)):
+        if app.state.work_items is None:
+            raise HTTPException(503, "WORK_ITEMS_UNAVAILABLE")
+        try:
+            return app.state.work_items.recent(project)
+        except KeyError as exc:
+            raise HTTPException(422, "UNKNOWN_PROJECT") from exc
+
+    @app.post("/v1/work-items/{item_id}/issue", response_model=InteractionResponse)
+    async def propose_issue(item_id: str, device_id: str = Depends(authenticate)):
+        item = app.state.captured_items.get(item_id)
+        if item is None:
+            raise HTTPException(404, "unknown work item")
+        repository = cfg.github_repositories.get(item.project)
+        if not cfg.github_token or not repository:
+            raise HTTPException(503, "GITHUB_ISSUES_UNAVAILABLE")
+
+        async def create_issue() -> str:
+            issue_url = await app.state.github.create(item)
+            app.state.work_items.attach_issue(item, issue_url)
+            app.state.captured_items[item.id] = item.model_copy(update={"issue_url": issue_url})
+            return issue_url
+
+        proposal = app.state.confirmations.propose(
+            "create_github_issue", repository, device_id, create_issue
+        )
+        return InteractionResponse(
+            device_id=device_id,
+            transcript="",
+            card=Card(
+                kind="confirmation", title="Create GitHub issue",
+                body=item.title[:240], footer="Short press: create · Hold: cancel",
+            ),
+            pending_action=proposal,
+        )
+
+
 
     @app.get("/v1/audio/{response_id}")
     async def audio(response_id: str, _device_id: str = Depends(authenticate)):
