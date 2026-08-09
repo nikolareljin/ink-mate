@@ -14,6 +14,34 @@ GitHub Actions delegates general Python/build orchestration and secret scanning
 to reusable workflows in `nikolareljin/ci-helpers@production`. Firmware builds
 remain explicit because their ESP-IDF matrix is hardware-specific.
 
+## Local command suite
+
+Run `./update` after cloning to initialize `scripts/script-helpers` and any
+nested submodules at the revisions pinned by the checkout. `./update --remote`
+is an explicit opt-in to moving submodules to their configured tracking branch;
+review any resulting gitlink changes before committing.
+
+`./install` prepares project-local dependencies: ESP-IDF 6.0.2 under
+`.tools/esp-idf`, `gateway/.venv` with test dependencies, and `.venv-docs` for
+the documentation site. Use `--esp-idf-dir DIR` for a pre-existing toolchain,
+`--with-audio` for optional local STT dependencies, or `--with-docker` to opt
+in to Docker installation through the shared helpers. `--skip-esp-idf`,
+`--skip-gateway`, and `--skip-docs` omit individual groups.
+
+`./build` builds every component by default. Select `--firmware`, `--gateway`,
+or `--docs` to narrow it; `--profile v1|v2|both` controls the firmware matrix
+and `--esp-idf-dir DIR` selects its toolchain.
+
+`./test` runs gateway tests and Compose validation, both selected firmware
+builds plus host tests, and a strict documentation build by default. It accepts
+the same component flags, `--profile`, and `--esp-idf-dir` as `./build`.
+
+`./deploy --profile v1|v2 --port /dev/ttyDEVICE --hardware-verified` builds and
+flashes one USB-connected board, then opens the serial monitor. The profile,
+port, and acknowledgement are mandatory. Use `--skip-build` only for an
+already-built matching profile. Never pass `--hardware-verified` until the PCB
+revision and memory inspection have been recorded.
+
 ## Documentation site
 
 Install the documentation dependencies and build with warnings treated as

@@ -40,6 +40,24 @@ git clone --recurse-submodules https://github.com/nikolareljin/ink-mate.git
 
 ## Quick start
 
+### Local commands
+
+The root command suite uses the `scripts/script-helpers` submodule for shared
+logging, Python, and Docker behavior. Each command accepts `--help`.
+
+```sh
+./update                         # initialize/update pinned submodules
+./install                        # ESP-IDF, gateway test, and docs dependencies
+./build                          # firmware (V1 and V2), gateway image, and docs
+./test                           # gateway, firmware, and documentation checks
+./deploy --profile v2 --port /dev/ttyACM0 --hardware-verified
+```
+
+`./install --with-docker` explicitly opts into system Docker installation. Use
+`./install --with-audio` to add optional local STT dependencies. The default
+installation paths are ignored by Git; see each command's `--help` for
+component-selection and path options.
+
 ### Gateway
 
 1. Copy `.env.example` to `.env` and replace every placeholder.
@@ -55,11 +73,18 @@ do not expose it directly to the internet.
 
 ### Hardware and firmware
 
-1. Connect the board over USB and install ESP-IDF 6.0.2.
-2. Run `./scripts/inspect-hardware.sh /dev/ttyACM0` and save the result locally.
-3. Compare the PCB silkscreen and detected memory with
+1. Connect the board over USB. To install the pinned ESP-IDF toolchain locally
+   and inspect the connected board in one command, run:
+
+   ```sh
+   ./scripts/inspect-connected-device.sh /dev/ttyACM0
+   ```
+
+   The toolchain is installed under `.tools/esp-idf` (ignored by Git). Set
+   `INKMATE_ESP_IDF_DIR` to use an existing installation instead.
+2. Save the result locally, then compare the PCB silkscreen and detected memory with
    [the bring-up guide](docs/hardware-bring-up.md).
-4. Build an explicit profile, for example:
+3. Build an explicit profile, for example:
 
    ```sh
    ./scripts/build-firmware.sh v2

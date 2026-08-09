@@ -1,0 +1,89 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage: ./test [OPTIONS]
+
+Run all local tests by default. Select one or more component flags to narrow
+the test run.
+
+Options:
+  --firmware          Build the selected firmware profile and run host tests.
+  --gateway           Run gateway unit tests and validate Compose configuration.
+  --docs              Build documentation with warnings treated as errors.
+  --profile PROFILE   Firmware profile: v1, v2, or both (default: both).
+  --esp-idf-dir DIR   ESP-IDF directory (default: .tools/esp-idf).
+  -h, --help          Show this help text.
+EOF
+}
+
+repo_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+idf_dir="$repo_dir/.tools/esp-idf"
+test_firmware=false
+test_gateway=false
+test_docs=false
+selected=false
+profile=both
+
+while [[ "$#" -gt 0 ]]; do
+  case "$1" in
+    --firmware) test_firmware=true; selected=true ;;
+    --gateway) test_gateway=true; selected=true ;;
+    --docs) test_docs=true; selected=true ;;
+    --profile)
+      [[ "$#" -ge 2 ]] || { echo "--profile requires v1, v2, or both" >&2; exit 2; }
+      profile=$2; shift ;;
+    --esp-idf-dir)
+      [[ "$#" -ge 2 ]] || { echo "--esp-idf-dir requires a directory" >&2; exit 2; }
+      idf_dir=$2; shift ;;
+    -h|--help) usage; exit 0 ;;
+    *) echo "unknown option: $1" >&2; usage >&2; exit 2 ;;
+  esac
+  shift
+done
+
+case "$profile" in v1|v2|both) ;; *) echo "--profile must be v1, v2, or both" >&2; exit 2 ;; esac
+if [[ "$selected" == false ]]; then test_firmware=true; test_gateway=true; test_docs=true; fi
+
+helpers="$repo_dir/scripts/script-helpers/helpers.sh"
+[[ -f "$helpers" ]] || {
+  echo "script-helpers is missing; run ./update first." >&2
+  exit 1
+}
+# shellcheck source=scripts/script-helpers/helpers.sh
+source "$helpers"
+shlib_import logging docker
+
+if [[ "$test_gateway" == true ]]; then
+  gateway_python="$repo_dir/gateway/.venv/bin/python"
+  [[ -x "$gateway_python" ]] || { log_error "Gateway dependencies are missing; run ./install first."; exit 1; }
+  print_info "Running gateway tests"
+  (cd "$repo_dir/gateway" && "$gateway_python" -m pytest tests)
+  check_docker
+  print_info "Validating Compose configuration"
+  (cd "$repo_dir" && docker_compose config --quiet)
+fi
+
+if [[ "$test_firmware" == true ]]; then
+  [[ -f "$idf_dir/export.sh" ]] || { log_error "ESP-IDF is missing; run ./install first."; exit 1; }
+  # shellcheck disable=SC1090
+  source "$idf_dir/export.sh"
+  for board_profile in $([[ "$profile" == both ]] && echo "v1 v2" || echo "$profile"); do
+    print_info "Building firmware profile $board_profile"
+    "$repo_dir/scripts/build-firmware.sh" "$board_profile"
+  done
+  print_info "Running firmware host tests"
+  cmake -S "$repo_dir/firmware/components/inkmate_core/test" -B "$repo_dir/firmware/build/host-tests"
+  cmake --build "$repo_dir/firmware/build/host-tests"
+  ctest --test-dir "$repo_dir/firmware/build/host-tests" --output-on-failure
+fi
+
+if [[ "$test_docs" == true ]]; then
+  docs_mkdocs="$repo_dir/.venv-docs/bin/mkdocs"
+  [[ -x "$docs_mkdocs" ]] || { log_error "Documentation dependencies are missing; run ./install first."; exit 1; }
+  print_info "Building documentation site"
+  (cd "$repo_dir" && "$docs_mkdocs" build --strict)
+fi
+
+print_success "Requested tests passed"

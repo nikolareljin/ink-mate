@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage: ./update [--remote] [--help]
+
+Initializes and updates the script-helpers submodule and any nested submodules
+to the revisions recorded by this checkout. --remote instead updates each
+submodule from its configured remote tracking branch and may leave a changed
+gitlink that must be reviewed and committed separately.
+EOF
+}
+
+remote=false
+while [[ "$#" -gt 0 ]]; do
+  case "$1" in
+    --remote) remote=true ;;
+    -h|--help) usage; exit 0 ;;
+    *) echo "unknown option: $1" >&2; usage >&2; exit 2 ;;
+  esac
+  shift
+done
+
+repo_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+helpers="$repo_dir/scripts/script-helpers/helpers.sh"
+if [[ ! -f "$helpers" ]]; then
+  echo "script-helpers is unavailable until submodules are initialized" >&2
+  git -C "$repo_dir" submodule update --init --recursive
+fi
+# shellcheck source=scripts/script-helpers/helpers.sh
+source "$helpers"
+shlib_import logging
+
+args=(submodule update --init --recursive)
+if [[ "$remote" == true ]]; then
+  args+=(--remote)
+fi
+print_info "Updating Git submodules"
+git -C "$repo_dir" "${args[@]}"
+print_success "Git submodules are ready"

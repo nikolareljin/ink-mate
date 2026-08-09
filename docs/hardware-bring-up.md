@@ -13,11 +13,18 @@ that expectation.
 
 ## Inspection
 
-With ESP-IDF active, run:
+To install the pinned ESP-IDF toolchain locally (if needed), activate it, and
+inspect a connected board, run:
 
 ```sh
-./scripts/inspect-hardware.sh /dev/ttyACM0
+./scripts/inspect-connected-device.sh /dev/ttyACM0
 ```
+
+The wrapper installs ESP-IDF 6.0.2 in `.tools/esp-idf`, which is ignored by
+Git. To use an existing installation, set `INKMATE_ESP_IDF_DIR` to its path.
+After the first installation, `./scripts/inspect-hardware.sh /dev/ttyACM0`
+also works in a shell where that ESP-IDF installation's `export.sh` has been
+sourced.
 
 Save reports under the ignored `hardware-reports/` directory. Do not include
 MAC addresses, pairing data, or serial logs containing credentials in issues.
