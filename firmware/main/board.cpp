@@ -3,6 +3,7 @@
 #include "board_profile.h"
 #include "driver/i2c_master.h"
 #include "driver/gpio.h"
+#include "esp_adc/adc_oneshot.h"
 #include "esp_chip_info.h"
 #include "esp_flash.h"
 #include "esp_log.h"
@@ -40,6 +41,31 @@ void assert_power_hold_if_verified() {
         return;
     }
     ESP_LOGI(kTag, "BAT_Control asserted on GPIO %d", static_cast<int>(pins.power_hold));
+}
+
+void log_battery_adc_if_verified() {
+    adc_oneshot_unit_init_cfg_t unit_config{};
+    unit_config.unit_id = ADC_UNIT_1;
+    adc_oneshot_unit_handle_t unit{};
+    if (adc_oneshot_new_unit(&unit_config, &unit) != ESP_OK) {
+        ESP_LOGW(kTag, "BAT_ADC unit initialization failed");
+        return;
+    }
+    adc_oneshot_chan_cfg_t channel_config{};
+    channel_config.bitwidth = ADC_BITWIDTH_DEFAULT;
+    channel_config.atten = ADC_ATTEN_DB_12;
+    if (adc_oneshot_config_channel(unit, ADC_CHANNEL_3, &channel_config) != ESP_OK) {
+        ESP_LOGW(kTag, "BAT_ADC channel configuration failed");
+        adc_oneshot_del_unit(unit);
+        return;
+    }
+    int raw = 0;
+    if (adc_oneshot_read(unit, ADC_CHANNEL_3, &raw) == ESP_OK) {
+        ESP_LOGI(kTag, "BAT_ADC raw=%d", raw);
+    } else {
+        ESP_LOGW(kTag, "BAT_ADC read failed");
+    }
+    adc_oneshot_del_unit(unit);
 }
 
 void probe_i2c_devices(inkmate::BootReport* report) {
@@ -91,6 +117,7 @@ BootReport initialize_board_safely() {
              static_cast<unsigned long>(report.psram_bytes),
              static_cast<int>(esp_reset_reason()));
     assert_power_hold_if_verified();
+    log_battery_adc_if_verified();
     // This only emits address probes on the verified shared peripheral bus. It does
     // not power, configure, or drive the display, microphone, amplifier, or codec.
     probe_i2c_devices(&report);
