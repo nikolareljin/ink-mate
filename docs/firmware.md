@@ -13,7 +13,9 @@ The state machine covers boot diagnostics, provisioning, idle/home, recording, s
 | Pending action | Short press | Confirm once |
 | Pending action | Long press | Cancel |
 
-PWR remains dedicated to the board power latch. Exact behavior must be measured. Buttons require debounce, duration thresholds, and protection against interpreting release as another event.
+V2 configures BOOT on GPIO0 and PWR on GPIO18 as active-low inputs with internal pull-ups. It polls at 10 ms and accepts a state change only after 30 ms. A BOOT hold reaches the recording intent at 700 ms; its release submits the intent. A short BOOT press renders the next diagnostic card. A 2 second PWR hold releases GPIO17, the battery power latch. PWR must be released once after boot before it can request shutdown, preventing the power-on hold from immediately cutting power. USB can keep the board powered after that action.
+
+Audio capture and gateway submission are not connected yet. The current firmware renders the gesture-specific diagnostic card and logs the requested intent. It does not claim to record or submit audio.
 
 ## Cards and refresh
 

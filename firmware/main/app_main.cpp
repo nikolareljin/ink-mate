@@ -24,11 +24,16 @@ extern "C" void app_main() {
     ESP_ERROR_CHECK(initialize_nvs());
     const inkmate::BootReport report = inkmate::initialize_board_safely();
 
-    inkmate::AppState state;
+    static inkmate::AppState state;
     inkmate::ProvisioningManager provisioning;
     ESP_ERROR_CHECK(provisioning.initialize());
     ESP_ERROR_CHECK(provisioning.start_if_needed());
     state.set_online(provisioning.provisioned());
+
+    if (report.pins_verified) {
+        ESP_ERROR_CHECK(inkmate::render_boot_card(report));
+        ESP_ERROR_CHECK(inkmate::start_controls(&state, report));
+    }
 
     ESP_LOGI(kTag, "InkMate protocol=%u mode=%u", inkmate::kProtocolVersion,
              static_cast<unsigned>(state.mode()));

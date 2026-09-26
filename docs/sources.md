@@ -24,7 +24,7 @@ Record exact commits and licenses before copying code. A related-board example i
 | ESP32-S3, display, Wi-Fi/BLE, RTC, SHTC3, TF, audio | Vendor claim |
 | PCF85063 RTC | Vendor claim in linked public listing |
 | ES8311 codec | Working assumption |
-| V2 board | Working assumption |
-| 4 MB flash / 2 MB PSRAM | Working assumption |
+| V2 board | PCB marking and USB chip probe |
+| V2 8 MB flash / 8 MB PSRAM | USB flash probe and ESP-IDF boot diagnostics |
 | Reset problem affects this exact unit | Unconfirmed risk from one review |
-| Peripheral GPIO assignments | Unknown pending revision-specific evidence |
+| V2 display, power, and button GPIO assignments | V2 vendor ESP-IDF example, display output, and input configuration |

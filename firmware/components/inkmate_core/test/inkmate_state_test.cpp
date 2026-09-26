@@ -12,6 +12,7 @@ int main() {
     assert(app.handle(ButtonEvent::Released, 20) == Intent::SubmitRecording);
     app.interaction_complete();
     assert(app.mode() == AppMode::Idle);
+    assert(app.handle(ButtonEvent::ShortPress, 30) == Intent::NextCard);
 
     assert(!app.propose_action({}, 100));
     PendingAction action{"req-1", "Restart service", "host/service", 200};

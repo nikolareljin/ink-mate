@@ -7,9 +7,9 @@ variant. The product family also contains touch variants; their pin maps and
 input behavior are out of scope for the initial profile.
 
 Do not infer the board revision from the listing title. Photograph the PCB and
-record its silkscreen. Detect the chip package, flash, and PSRAM over USB. The
-working expectation is V2, 4 MB flash, and 2 MB PSRAM, but detection wins over
-that expectation.
+record its silkscreen. Detect the chip package, flash, and PSRAM over USB. V2
+uses the ESP32-S3-PICO-1-N8R8 with 8 MB flash and 8 MB PSRAM; detection wins if
+the connected board differs.
 
 ## Inspection
 
@@ -28,6 +28,28 @@ sourced.
 
 Save reports under the ignored `hardware-reports/` directory. Do not include
 MAC addresses, pairing data, or serial logs containing credentials in issues.
+
+After building and flashing a profile, confirm the device with:
+
+```sh
+./scripts/verify-connected-device.sh v2 /dev/ttyACM0
+```
+
+The helper reads the flashed bootloader, partition table, and application image
+against the build manifest, then resets the board and saves a filtered boot
+report. It does not compare OTA metadata because the bootloader changes it
+when selecting the active image.
+
+Verify V2 controls with:
+
+```sh
+./scripts/verify-controls.sh /dev/ttyACM0
+```
+
+During the capture, press BOOT briefly, then hold it for at least 700 ms and
+release. The report must contain `next card`, `begin recording`, and `submit
+recording`. Hold PWR for 2 seconds only when a powered-down board is safe: it
+releases the battery latch and USB may keep the board running.
 
 Before enabling peripherals, verify one at a time: e-paper, BOOT and PWR logic,
 ES8311 microphone/speaker, PCF85063 RTC, SHTC3, battery ADC/charger, Wi-Fi, and

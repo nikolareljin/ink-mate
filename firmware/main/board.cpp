@@ -1,6 +1,7 @@
 #include "board.h"
 
 #include "board_profile.h"
+#include "driver/gpio.h"
 #include "driver/i2c_master.h"
 #include "esp_chip_info.h"
 #include "esp_flash.h"
@@ -14,7 +15,8 @@ constexpr char kTag[] = "inkmate.board";
 
 bool required_pins_verified() {
     const auto& p = inkmate::board::kPins;
-    return p.power_hold != GPIO_NUM_NC && p.boot_button != GPIO_NUM_NC &&
+    return p.power_hold != GPIO_NUM_NC && p.epaper_power != GPIO_NUM_NC &&
+           p.boot_button != GPIO_NUM_NC && p.power_button != GPIO_NUM_NC &&
            p.i2c_sda != GPIO_NUM_NC && p.i2c_scl != GPIO_NUM_NC &&
            p.epaper_busy != GPIO_NUM_NC && p.epaper_reset != GPIO_NUM_NC &&
            p.epaper_dc != GPIO_NUM_NC && p.epaper_cs != GPIO_NUM_NC &&
@@ -63,13 +65,26 @@ BootReport initialize_board_safely() {
 #endif
     report.pins_verified = required_pins_verified();
 
+#if CONFIG_INKMATE_BOARD_V2
+    {
+        gpio_config_t power_hold{};
+        power_hold.mode = GPIO_MODE_OUTPUT;
+        power_hold.pin_bit_mask = 1ULL << board::kPins.power_hold;
+        if (gpio_config(&power_hold) == ESP_OK) {
+            gpio_set_level(board::kPins.power_hold, 1);
+        } else {
+            ESP_LOGW(kTag, "cannot assert battery power latch");
+        }
+    }
+#endif
+
     ESP_LOGI(kTag, "profile=%s cores=%u revision=%u flash=%lu psram=%lu reset_reason=%d",
              board::kRevision, chip.cores, chip.revision,
              static_cast<unsigned long>(report.flash_bytes),
              static_cast<unsigned long>(report.psram_bytes),
              static_cast<int>(esp_reset_reason()));
     // This only emits address probes on the verified shared peripheral bus. It does
-    // not power, configure, or drive the display, microphone, amplifier, or codec.
+    // not configure the microphone, amplifier, or codec.
     probe_i2c_devices(&report);
     if (!report.pins_verified) {
         ESP_LOGW(kTag, "GPIO map is unverified; display/audio/sensors/power-hold remain disabled");

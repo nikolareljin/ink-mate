@@ -16,8 +16,8 @@ AI providers, text-to-speech, and access to explicitly allowlisted tools.
 
 > [!IMPORTANT]
 > The board revision and memory must be detected on real hardware before
-> flashing a release build. The expected configuration is V2 with 4 MB flash
-> and 2 MB PSRAM, but V1/V2 pin maps exist. Some units may also fail to restart
+> flashing a release build. V2 uses the ESP32-S3-PICO-1-N8R8 with 8 MB flash
+> and 8 MB PSRAM; V1/V2 pin maps are not interchangeable. Some units may also fail to restart
 > on battery after a software reset. OTA and automatic deep sleep stay disabled
 > until the [reset matrix](docs/hardware-bring-up.md#battery-reset-matrix) passes.
 
@@ -51,6 +51,7 @@ logging, Python, and Docker behavior. Each command accepts `--help`.
 ./build                          # firmware (V1 and V2), gateway image, and docs
 ./test                           # gateway, firmware, and documentation checks
 ./deploy --profile v2 --port /dev/ttyACM0 --hardware-verified
+./scripts/verify-connected-device.sh v2 /dev/ttyACM0
 ```
 
 `./install --with-docker` explicitly opts into system Docker installation. Use
@@ -98,12 +99,36 @@ every write it creates a full, timestamped flash dump under
 stored Wi-Fi credentials, remain local-only, and are ignored by Git. Use
 `./scripts/backup-flash.sh v2 /dev/ttyACM0` to make a backup without flashing.
 
+After a flash, verify the exact bootloader, partition table, and application
+bytes with:
+
+```sh
+./scripts/verify-flash.sh v2 /dev/ttyACM0
+```
+
+The verifier resets the board and excludes OTA metadata because the bootloader
+updates it when selecting the active slot. Capture a filtered boot report with:
+
+```sh
+./scripts/capture-boot-log.sh /dev/ttyACM0
+```
+
+The report is saved under ignored `hardware-reports/` and excludes lines that
+may contain credentials or device identifiers. `verify-connected-device.sh`
+chains the hardware probe, byte verification, and boot-log capture.
+
+Verify BOOT gestures after the V2 firmware is installed:
+
+```sh
+./scripts/verify-controls.sh /dev/ttyACM0
+```
+
 ## Intended controls
 
-- Hold BOOT to record; release it to submit.
-- Press BOOT briefly while idle to cycle cards.
+- Hold BOOT for 700 ms to begin recording; release it to submit.
+- Press BOOT for less than 700 ms while idle to cycle cards.
 - When an action is pending, press BOOT briefly to confirm or hold it to cancel.
-- PWR remains dedicated to the board's power latch and shutdown behavior.
+- Hold PWR for 2 seconds to release the battery power latch. USB can keep the board powered.
 
 Host mutations are proposals first. Only fixed command templates are eligible,
 and a valid physical confirmation is required before execution.

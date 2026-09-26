@@ -13,9 +13,9 @@ idf.py build
 idf.py -p /dev/ttyACM0 flash monitor
 ```
 
-On first boot, the serial log reports chip, flash, PSRAM, reset reason, selected profile, and peripheral probe results. It does not enable GPIOs whose mapping is unverified. Copy the correct values from the vendor revision schematic into `main/include/board_profile.h`, then remove the associated `GPIO_NUM_NC` gate only after verification.
+On first boot, the serial log reports chip, flash, PSRAM, reset reason, selected profile, and peripheral probe results. V2 enables the confirmed display, BOOT, PWR, and power-latch GPIOs. For a new board revision, keep unverified GPIOs as `GPIO_NUM_NC`, copy values from the matching vendor schematic into `main/include/board_profile.h`, and remove each gate only after verification.
 
-Deep sleep and OTA reboot default off because the supplied listing contains a report of battery restart failure. Enable each only after completing `docs/bring-up.md`'s reset matrix (kept in the repository documentation).
+Deep sleep and OTA reboot default off because the supplied listing contains a report of battery restart failure. Enable each only after completing `docs/hardware-bring-up.md`'s reset matrix.
 
 ## Host tests
 

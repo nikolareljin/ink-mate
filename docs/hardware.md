@@ -17,9 +17,15 @@ The ES8311 codec is a working assumption based on related board materials, not a
 
 ## Revision, memory, and pinout
 
-Related vendor material distinguishes V1 and V2 non-touch boards. A store SKU does not establish the PCB revision, so InkMate uses explicit build profiles. V2 with 4 MB flash and 2 MB PSRAM is only the current expectation. PCB silkscreen, package markings, `esptool flash_id`, ESP-IDF boot diagnostics, and a revision-specific schematic take precedence.
+Related vendor material distinguishes V1 and V2 non-touch boards. A store SKU does not establish the PCB revision, so InkMate uses explicit build profiles. V2 uses the ESP32-S3-PICO-1-N8R8 with 8 MB flash and 8 MB PSRAM. PCB silkscreen, package markings, `esptool flash-id`, and ESP-IDF boot diagnostics take precedence.
 
-No complete revision-specific pinout is established by the linked marketplace listing. GPIOs must remain unassigned/disabled until traced to a reliable schematic or confirmed against vendor firmware and the physical board. Never copy a touch-model pinout or assume V1 and V2 match.
+The V2 vendor ESP-IDF example confirms GPIO 6 for the e-paper power rail, GPIOs
+8-13 for panel control and SPI, GPIO 17 for battery power hold, GPIO 0 for
+BOOT, GPIO 18 for PWR, and GPIOs 47-48 for the shared I2C bus. Both buttons
+are active-low. InkMate uses these only in the
+explicit V2 profile. Add a new profile for another board revision, leave its
+unverified fields as `GPIO_NUM_NC`, and do not inherit V1 or V2 pins. Never
+copy a touch-model pinout or assume board revisions match.
 
 ## Known limitations and risks
 

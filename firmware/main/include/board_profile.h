@@ -10,7 +10,9 @@ namespace inkmate::board {
 // GPIO_NUM_NC is intentional. Populate only from the schematic matching the PCB.
 struct Pins {
     gpio_num_t power_hold;
+    gpio_num_t epaper_power;
     gpio_num_t boot_button;
+    gpio_num_t power_button;
     gpio_num_t battery_adc;
     gpio_num_t i2c_sda;
     gpio_num_t i2c_scl;
@@ -24,7 +26,7 @@ struct Pins {
 
 #if CONFIG_INKMATE_BOARD_V1
 inline constexpr char kRevision[] = "v1-non-touch";
-inline constexpr Pins kPins{GPIO_NUM_NC, GPIO_NUM_NC, GPIO_NUM_NC,
+inline constexpr Pins kPins{GPIO_NUM_NC, GPIO_NUM_NC, GPIO_NUM_NC, GPIO_NUM_NC, GPIO_NUM_NC,
                             GPIO_NUM_NC, GPIO_NUM_NC, GPIO_NUM_NC,
                             GPIO_NUM_NC, GPIO_NUM_NC, GPIO_NUM_NC,
                             GPIO_NUM_NC, GPIO_NUM_NC};
@@ -32,7 +34,9 @@ inline constexpr Pins kPins{GPIO_NUM_NC, GPIO_NUM_NC, GPIO_NUM_NC,
 inline constexpr char kRevision[] = "v2-non-touch";
 inline constexpr Pins kPins{
     GPIO_NUM_17,  // BAT_Control: keep the battery power latch asserted.
+    GPIO_NUM_6,   // EPD power rail enable, active low.
     GPIO_NUM_0,   // BOOT0 button.
+    GPIO_NUM_18,  // PWR button, active low.
     GPIO_NUM_4,   // BAT_ADC (VBAT divider).
     GPIO_NUM_47,  // shared RTC/SHTC3/ES8311 I2C SDA.
     GPIO_NUM_48,  // shared RTC/SHTC3/ES8311 I2C SCL.
