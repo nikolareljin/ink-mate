@@ -34,16 +34,16 @@ case "$command" in
   list) curl --silent --show-error --fail "${auth[@]}" "$url/v1/adapters" ;;
   jobs) curl --silent --show-error --fail "${auth[@]}" "$url/v1/jobs" ;;
   approve)
-    [[ $# -eq 3 ]] || { echo "usage: approve ID FINGERPRINT --yes" >&2; exit 2; }; need_yes
+    [[ $# -eq 3 ]] || { echo "usage: approve ID FINGERPRINT --yes" >&2; exit 2; }; need_yes "$@"
     curl --silent --show-error --fail -X POST "${auth[@]}" --data-urlencode "fingerprint=$2" "$url/v1/adapters/$1/approve" ;;
   disable)
-    [[ $# -eq 2 ]] || { echo "usage: disable ID --yes" >&2; exit 2; }; need_yes
+    [[ $# -eq 2 ]] || { echo "usage: disable ID --yes" >&2; exit 2; }; need_yes "$@"
     curl --silent --show-error --fail -X POST "${auth[@]}" "$url/v1/adapters/$1/disable" ;;
   grant)
-    [[ $# -eq 3 ]] || { echo "usage: grant ID DEVICE --yes" >&2; exit 2; }; need_yes
+    [[ $# -eq 3 ]] || { echo "usage: grant ID DEVICE --yes" >&2; exit 2; }; need_yes "$@"
     curl --silent --show-error --fail -X POST "${auth[@]}" "$url/v1/adapters/$1/grants/$2" ;;
   revoke)
-    [[ $# -eq 3 ]] || { echo "usage: revoke ID DEVICE --yes" >&2; exit 2; }; need_yes
+    [[ $# -eq 3 ]] || { echo "usage: revoke ID DEVICE --yes" >&2; exit 2; }; need_yes "$@"
     curl --silent --show-error --fail -X DELETE "${auth[@]}" "$url/v1/adapters/$1/grants/$2" ;;
   *) echo "unknown adapter command: $command" >&2; exit 2 ;;
 esac
