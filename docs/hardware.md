@@ -22,7 +22,7 @@ Related vendor material distinguishes V1 and V2 non-touch boards. A store SKU do
 ## Observed V2 enclosure
 
 <figure class="ink-device-photo">
-  <img src="assets/hardware/v2-rear-board-label.jpg" alt="Rear label on the V2 e-paper device">
+  <img src="../assets/hardware/v2-rear-board-label.jpg" alt="Rear label on the V2 e-paper device">
   <figcaption>Rear enclosure label on the observed V2 device.</figcaption>
 </figure>
 
