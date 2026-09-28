@@ -14,3 +14,17 @@ Read `README.md` and the relevant document under `docs/` before changing code.
 - Do not commit `.env`, local YAML, recordings, models, build output, device
   dumps, or generated credentials.
 - Run `./scripts/check.sh`; report precisely what ran and what was unavailable.
+
+## Branding assets
+
+- Keep `docs/assets/inkmate-logo.png` as the master documentation logo.
+- Keep `docs/assets/inkmate-app-icon-512.png` and
+  `docs/assets/inkmate-app-icon-192.png` as application icons.
+- Keep `docs/assets/favicon.ico` as the browser favicon and
+  `docs/assets/inkmate-hero.png` as the README and documentation hero image.
+- Preserve transparent logo proportions. Do not recolor individual elements.
+- Use charcoal for the enclosure, warm cream for e-paper surfaces, and muted
+  teal only as a status accent.
+- Treat the hero as an illustration, not a mechanical rendering. Label hardware
+  photographs separately.
+- Keep README and documentation asset paths repository-relative.
