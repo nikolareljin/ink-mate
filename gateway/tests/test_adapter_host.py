@@ -96,6 +96,21 @@ async def test_cli_adapter_runs_only_after_approval_and_grant(tmp_path):
     assert result.body == "Ready"
 
 
+async def test_cli_adapter_timeout_stops_invocation(tmp_path):
+    timed_out = manifest()
+    timed_out.operations[0].timeout_seconds = 1
+    registry = Registry(tmp_path, TOKEN)
+    record = registry.register(Registration(manifest=timed_out, argv=[sys.executable, "-c", "import time; time.sleep(5)"]))
+    registry.approve("workflow", record["fingerprint"])
+    registry.grant("workflow", "desk")
+    invocation = Invocation(
+        invocation_id="request-1", device_id="desk", adapter_id="workflow", operation_id="work.next",
+        parameters={"project": "inbox"}, deadline=__import__("inkmate_gateway.adapter_host", fromlist=["now"]).now() + timedelta(seconds=5),
+    )
+    with pytest.raises(TimeoutError):
+        await registry.invoke(invocation)
+
+
 async def test_host_api_requires_authentication_for_adapter_inventory(tmp_path):
     app = create_adapter_host(state_dir=str(tmp_path), token=TOKEN)
     registration = Registration(manifest=manifest("http"), endpoint="http://127.0.0.1:9001")

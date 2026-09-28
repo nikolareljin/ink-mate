@@ -305,7 +305,15 @@ class Registry:
                 result = AdapterResult.model_validate(response.json())
         else:
             proc = await asyncio.create_subprocess_exec(*json.loads(row["argv"]), cwd=row["cwd"], stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.DEVNULL, limit=65_536)
-            output, _ = await asyncio.wait_for(proc.communicate(json.dumps(payload).encode()), timeout=operation.timeout_seconds)
+            try:
+                output, _ = await asyncio.wait_for(
+                    proc.communicate(json.dumps(payload).encode()), timeout=operation.timeout_seconds
+                )
+            except (asyncio.TimeoutError, asyncio.CancelledError):
+                if proc.returncode is None:
+                    proc.kill()
+                    await proc.wait()
+                raise
             if proc.returncode != 0:
                 raise RuntimeError("CLI adapter failed")
             if len(output) > 65_536:
