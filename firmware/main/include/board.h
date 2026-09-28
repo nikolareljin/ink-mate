@@ -43,6 +43,9 @@ struct BootReport {
 BootReport initialize_board_safely();
 esp_err_t render_boot_card(const BootReport& report);
 esp_err_t render_interaction_card(Intent intent, const BootReport& report);
+esp_err_t start_interaction_renderer();
+esp_err_t queue_interaction_card(Intent intent, const BootReport& report);
+esp_err_t queue_response_card(const char* title, const char* body, const BootReport& report);
 esp_err_t start_controls(AppState* state, const BootReport& report);
 bool automatic_deep_sleep_allowed();
 bool ota_reboot_allowed();

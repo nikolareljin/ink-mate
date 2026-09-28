@@ -16,10 +16,14 @@ port=$2
 command -v python >/dev/null 2>&1 || { echo "python not found" >&2; exit 1; }
 
 repo_dir=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
-build_dir="$repo_dir/firmware/build/$profile"
+build_name=$profile
+if [ "$profile" = v2 ] && [ -f "$repo_dir/firmware/sdkconfig.private" ]; then
+  build_name="$profile-private"
+fi
+build_dir="$repo_dir/firmware/build/$build_name"
 manifest="$build_dir/flasher_args.json"
 [ -f "$manifest" ] || {
-  echo "flash manifest not found: build the $profile firmware first" >&2
+  echo "flash manifest not found: build the $build_name firmware first" >&2
   exit 1
 }
 

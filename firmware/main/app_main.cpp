@@ -32,6 +32,7 @@ extern "C" void app_main() {
 
     if (report.pins_verified) {
         ESP_ERROR_CHECK(inkmate::render_boot_card(report));
+        ESP_ERROR_CHECK(inkmate::start_interaction_renderer());
         ESP_ERROR_CHECK(inkmate::start_controls(&state, report));
     }
 

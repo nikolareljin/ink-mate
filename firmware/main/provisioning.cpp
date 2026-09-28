@@ -16,8 +16,26 @@
 #include "network_provisioning/scheme_ble.h"
 
 namespace {
+#ifndef CONFIG_INKMATE_WIFI_SSID
+#define CONFIG_INKMATE_WIFI_SSID ""
+#endif
+#ifndef CONFIG_INKMATE_WIFI_PASSWORD
+#define CONFIG_INKMATE_WIFI_PASSWORD ""
+#endif
 constexpr char kTag[] = "inkmate.prov";
 std::array<char, 20> service_name{};
+
+void wifi_event_handler(void*, esp_event_base_t event_base, std::int32_t event_id, void*) {
+    if (event_base != WIFI_EVENT) return;
+    if (event_id == WIFI_EVENT_STA_START || event_id == WIFI_EVENT_STA_DISCONNECTED) {
+        const esp_err_t result = esp_wifi_connect();
+        if (result != ESP_OK) ESP_LOGW(kTag, "Wi-Fi connect request failed: %s", esp_err_to_name(result));
+    }
+}
+
+void ip_event_handler(void*, esp_event_base_t, std::int32_t event_id, void*) {
+    if (event_id == IP_EVENT_STA_GOT_IP) ESP_LOGI(kTag, "Wi-Fi station connected");
+}
 
 void derive_identity() {
     std::uint8_t mac[6]{};
@@ -36,6 +54,10 @@ esp_err_t ProvisioningManager::initialize() {
     esp_netif_create_default_wifi_sta();
     wifi_init_config_t wifi_config = WIFI_INIT_CONFIG_DEFAULT();
     ESP_RETURN_ON_ERROR(esp_wifi_init(&wifi_config), kTag, "wifi init");
+    ESP_RETURN_ON_ERROR(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, wifi_event_handler, nullptr), kTag,
+                        "Wi-Fi event handler");
+    ESP_RETURN_ON_ERROR(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, ip_event_handler, nullptr), kTag,
+                        "IP event handler");
     derive_identity();
 
     network_prov_mgr_config_t config{};
@@ -43,12 +65,18 @@ esp_err_t ProvisioningManager::initialize() {
     config.scheme_event_handler = NETWORK_PROV_SCHEME_BLE_EVENT_HANDLER_FREE_BTDM;
     ESP_RETURN_ON_ERROR(network_prov_mgr_init(config), kTag, "provisioning manager init");
     ESP_RETURN_ON_ERROR(network_prov_mgr_is_wifi_provisioned(&provisioned_), kTag, "credential check");
+    ESP_LOGI(kTag, "Wi-Fi provisioning state: %s", provisioned_ ? "ready" : "required");
     return ESP_OK;
 }
 
 esp_err_t ProvisioningManager::start_if_needed() {
     if (provisioned_) {
+        wifi_config_t station{};
+        std::strncpy(reinterpret_cast<char*>(station.sta.ssid), CONFIG_INKMATE_WIFI_SSID, sizeof(station.sta.ssid) - 1);
+        std::strncpy(reinterpret_cast<char*>(station.sta.password), CONFIG_INKMATE_WIFI_PASSWORD, sizeof(station.sta.password) - 1);
+        if (station.sta.ssid[0] != '\0') ESP_RETURN_ON_ERROR(esp_wifi_set_config(WIFI_IF_STA, &station), kTag, "Wi-Fi config");
         ESP_LOGI(kTag, "Wi-Fi credentials present; starting station");
+        network_prov_mgr_deinit();
         return esp_wifi_start();
     }
     constexpr char provisioning_pop[] = CONFIG_INKMATE_PROVISIONING_POP;
