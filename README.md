@@ -14,6 +14,16 @@ button is held, sends the audio to a trusted-LAN gateway, and leaves a concise
 answer on the 200 x 200 e-paper display. The gateway owns speech recognition,
 text-to-speech, and access to explicitly allowlisted tools.
 
+## On the device
+
+<p align="center">
+  <img src="docs/assets/hardware/v2-response-card.jpg" alt="V2 device showing a returned response card on its e-paper display" width="280">
+  <img src="docs/assets/hardware/v2-side-controls.jpg" alt="V2 side controls showing the BOOT and PWR buttons" width="280">
+</p>
+
+The device retains a returned response card on the display. Its side controls
+provide BOOT and PWR input.
+
 > [!IMPORTANT]
 > The board revision and memory must be detected on real hardware before
 > flashing a release build. V2 uses the ESP32-S3-PICO-1-N8R8 with 8 MB flash

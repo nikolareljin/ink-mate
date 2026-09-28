@@ -105,6 +105,18 @@ body {
   text-align: center;
 }
 
+.ink-device-photo-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem;
+  max-width: 48rem;
+  margin: 0 auto;
+}
+
+.ink-device-photo-row .ink-device-photo {
+  margin: 1.5rem auto 2rem;
+}
+
 .ink-device-photo img {
   display: block;
   width: 100%;
@@ -172,4 +184,5 @@ body {
   }
   .md-typeset .ink-hero h1 { max-width: none; font-size: 2.15rem; }
   .ink-grid { grid-template-columns: 1fr; }
+  .ink-device-photo-row { grid-template-columns: 1fr; }
 }
