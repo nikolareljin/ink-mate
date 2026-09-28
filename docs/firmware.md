@@ -38,11 +38,11 @@ sheet or embedded text.
 
 | Ready | Recording | Sending |
 | --- | --- | --- |
-| ![Ready state](../assets/device-states/ready.png) | ![Recording state](../assets/device-states/recording.png) | ![Sending state](../assets/device-states/sending.png) |
+| ![Ready state](assets/device-states/ready.png) | ![Recording state](assets/device-states/recording.png) | ![Sending state](assets/device-states/sending.png) |
 
 | Processing | Confirmation | Cancelled |
 | --- | --- | --- |
-| ![Processing state](../assets/device-states/processing.png) | ![Confirmation state](../assets/device-states/confirmation.png) | ![Cancelled state](../assets/device-states/cancelled.png) |
+| ![Processing state](assets/device-states/processing.png) | ![Confirmation state](assets/device-states/confirmation.png) | ![Cancelled state](assets/device-states/cancelled.png) |
 
 ## Verified V2 state
 
