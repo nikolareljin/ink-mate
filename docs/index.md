@@ -7,28 +7,28 @@ hide:
 <section class="ink-hero">
   <div class="ink-hero__copy">
     <img class="ink-hero__logo" src="assets/inkmate-logo.png" alt="InkMate">
-    <p class="ink-kicker">Quiet hardware. Useful intelligence.</p>
-    <h1>A persistent, local-first AI companion.</h1>
-    <p class="ink-lede">InkMate turns a tiny ESP32-S3 e-paper board into a calm voice interface for local AI and carefully allowlisted tools.</p>
+    <p class="ink-kicker">Quiet hardware. Useful interaction.</p>
+    <h1>A persistent, local-first e-paper companion.</h1>
+    <p class="ink-lede">InkMate turns a tiny ESP32-S3 e-paper board into a calm voice interface for carefully allowlisted tools.</p>
     <div class="ink-actions">
       <a class="md-button md-button--primary" href="hardware-bring-up/">Bring up the board</a>
       <a class="md-button" href="architecture/">Explore the architecture</a>
     </div>
   </div>
-  <img class="ink-hero__device" src="assets/inkmate-hero.png" alt="InkMate e-paper AI desk companion">
+  <img class="ink-hero__device" src="assets/inkmate-hero.png" alt="InkMate e-paper companion">
 </section>
 
 ## What InkMate does
 
 InkMate keeps the microcontroller deliberately small and understandable. The
 device handles buttons, audio capture, networking, e-paper cards, and playback.
-A trusted-LAN gateway handles speech recognition, model providers, synthesis,
+A trusted-LAN gateway handles speech recognition, response generation, synthesis,
 and controlled automation. The screen retains the last useful card even when
 power is removed.
 
 <div class="ink-grid">
   <article class="ink-card"><span>01</span><h3>Ask naturally</h3><p>Hold BOOT to record, then release to submit a bounded audio clip.</p></article>
-  <article class="ink-card"><span>02</span><h3>Process locally</h3><p>The signed request reaches your gateway, local speech model, and Ollama-compatible LLM.</p></article>
+  <article class="ink-card"><span>02</span><h3>Process locally</h3><p>The signed request reaches your trusted gateway for local processing.</p></article>
   <article class="ink-card"><span>03</span><h3>Keep the answer</h3><p>A concise card remains visible on the 200 × 200 e-paper display without continuous refresh.</p></article>
   <article class="ink-card"><span>04</span><h3>Confirm actions</h3><p>Mutating tools use fixed templates, short expiry, and an explicit physical confirmation.</p></article>
 </div>
@@ -40,7 +40,7 @@ flowchart LR
   B[BOOT button] -->|hold| R[Bounded recording]
   R -->|HMAC-signed request| G[Trusted-LAN gateway]
   G --> S[Speech to text]
-  S --> L[Local or configured LLM]
+  S --> L[Response service]
   L --> C[Versioned response card]
   C --> E[E-paper display]
   L -. proposal .-> A[Allowlisted action]
@@ -87,4 +87,3 @@ or inspect the [protocol schemas](protocol.md).
   power loss.
 
 [Review the threat model](security-model.md){ .md-button }
-[Plan an extension](extensions.md){ .md-button }

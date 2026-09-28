@@ -1,5 +1,5 @@
 site_name: InkMate
-site_description: A persistent, local-first e-paper interface for AI and trusted tools.
+site_description: Local-first ESP32-S3 e-paper companion documentation.
 site_url: https://nikolareljin.github.io/ink-mate/
 repo_url: https://github.com/nikolareljin/ink-mate
 repo_name: nikolareljin/ink-mate
@@ -53,7 +53,6 @@ nav:
       - Development and CI: development.md
       - Roadmap: roadmap.md
   - Project:
-      - Branding: branding.md
       - Sources: sources.md
 
 plugins:
