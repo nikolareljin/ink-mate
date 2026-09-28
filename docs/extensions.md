@@ -1,37 +1,63 @@
-# Extension guide
+# Extend InkMate
+
+## Connect services on the host computer
+
+The local adapter host is the bridge between InkMate and services that already
+run on the same computer. Typical uses include a home-automation bridge, a
+personal organizer, a local notes service, or a small status endpoint. It is
+deliberately narrow: it listens on loopback only, does not expose a LAN API, and
+never accepts a free-form shell command.
+
+An integration can use one of two transports:
+
+| Transport | Use it for | Boundary |
+| --- | --- | --- |
+| HTTP | A service listening on the same computer | `http://127.0.0.1`, `http://localhost`, or IPv6 loopback only |
+| CLI | A local program with a stable invocation contract | Absolute executable path and optional absolute working directory |
+
+The adapter host stores its database under `~/.local/state/inkmate/adapters`
+and creates a private host token in ignored `.env` on first start. Run it in the
+foreground with `./dev run adapter-host`, or install a systemd user service with
+`./dev adapters install-service --start --yes`.
+
+## Approval flow
+
+1. A local service registers a versioned manifest and its HTTP endpoint or CLI
+   command with the adapter host.
+2. The host records it as `discovered` and prints a fingerprint.
+3. Inspect it with `./dev adapters list`, then approve the exact fingerprint:
+
+   ```sh
+   ./dev adapters approve workflow FINGERPRINT --yes
+   ./dev adapters grant workflow DEVICE_ID --yes
+   ```
+
+4. The integration becomes `active` only after the device grant. A changed
+   manifest, endpoint, or command returns it to `discovered`, removes grants,
+   and issues a new integration token after approval.
+
+Use `./dev adapters revoke ID DEVICE_ID --yes` to remove one device grant,
+`./dev adapters disable ID --yes` to stop an integration, and `./dev jobs` to
+inspect retained accepted jobs.
 
 ## Providers
 
-STT, LLM, and TTS adapters implement the gateway's typed provider interface and
-return normalized results. New adapters must define health behavior, bounded
-timeouts, cancellation, safe error mapping, and tests with network calls mocked.
-Secrets are read indirectly from environment variables and never serialized to
-device responses or normal logs.
+Speech and response providers use a typed interface and return normalized
+results. A new provider needs health behavior, bounded timeouts, cancellation,
+safe error mapping, and tests with mocked network calls. Keep secrets in the
+environment and out of device responses and normal logs.
 
-## Local application adapters
+## Manifest and invocation contract
 
-The optional local adapter host connects the gateway to explicitly approved
-applications on the same computer. It binds to `127.0.0.1` only and stores its
-state under `~/.local/state/inkmate/adapters` by default. It is not a LAN API.
+Every integration registers a versioned manifest. It declares a stable ID,
+display name, transport, and one or more operations. Each operation declares
+whether it is `read` or `mutating`, a one-to-thirty-second timeout, whether it
+may return an accepted job, and an input schema. Input schemas accept only
+declared string, integer, number, boolean, enum, or string-array parameters.
 
-Start it in the foreground with `./dev run adapter-host`. The first start creates
-an ignored `.env` with a random host token. For a user service, run
-`./dev adapters install-service --start --yes`.
-
-Adapters register either a loopback HTTP endpoint or a fixed absolute CLI argv.
-Every registration includes a versioned manifest. The host fingerprints the
-manifest and transport target together; any change returns the adapter to
-`discovered` and blocks it until it is approved again.
-
-```sh
-./dev adapters list
-./dev adapters approve workflow FINGERPRINT --yes
-./dev adapters grant workflow DEVICE_ID --yes
-```
-
-Approval prints a per-adapter token. Store it in the adapter's local
-configuration so its HTTP endpoint can verify the host request. Do not put it
-in a manifest or commit it to a repository.
+Approval prints a token for an HTTP integration. Keep it in local configuration
+so the endpoint can verify host requests. Do not put it in a manifest or commit
+it to a repository.
 
 The gateway accepts only an explicit adapter request:
 
@@ -39,16 +65,16 @@ The gateway accepts only an explicit adapter request:
 adapter workflow work.next project=inbox
 ```
 
-Parameters are checked against the operation schema before the adapter runs.
-Read operations return one short card. Mutating operations produce a physical
-device confirmation first. Accepted jobs are retained for seven days and can be
-listed with `./dev jobs`.
+Parameters are checked against the operation schema before an integration runs.
+Read operations return one short card. Changes require physical confirmation on
+the device first. Accepted jobs are retained for seven days and can be listed
+with `./dev jobs`.
 
-Adapter commands receive one JSON invocation on standard input and must write
-one JSON result on standard output. Shell parsing is never used. HTTP adapters
-receive the same invocation at `POST /v1/invoke` with their per-adapter token.
-Both transports must return `status`, `title`, `body`, `severity`, and, for an
-accepted job, `job_id`.
+A CLI integration receives one JSON invocation on standard input and writes one
+JSON result on standard output. HTTP integrations receive the same invocation at
+`POST /v1/invoke` with their integration token. Both return `status`, `title`,
+`body`, `severity`, and, for an accepted job, `job_id`. Results are bounded for
+the e-paper card: title up to 32 characters and body up to 240 characters.
 
 An HTTP registration has this shape. The host rejects non-loopback endpoints
 and unknown fields.
@@ -91,14 +117,14 @@ which arguments are constants, constrained values, or validated paths. Resolve
 paths before checking workspace allowlists and reject symlink escapes. Mark all
 state-changing actions as mutating so they require physical confirmation.
 
-An adapter may propose an action but cannot execute it directly. The central
+An integration may propose an action but cannot execute it directly. The central
 service binds the proposal to a paired device, gives it a short expiry, and
-consumes it once. Add tests for denial, expiry, replay, target substitution,
-path traversal, cancellation, and provider failure.
+consumes it once. Test denial, expiry, replay, target substitution, path
+traversal, cancellation, and provider failure.
 
-Codex and Claude job adapters remain disabled by default. Limit them to named
-workspaces. Inspecting status may be read-only; starting or cancelling a job is
-mutating and requires confirmation.
+Job-oriented integrations remain disabled by default. Limit them to named
+workspaces. Inspecting status may be read-only; starting or cancelling a job
+requires confirmation.
 
 ## Cards
 
