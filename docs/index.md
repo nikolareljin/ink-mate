@@ -33,6 +33,22 @@ power is removed.
   <article class="ink-card"><span>04</span><h3>Confirm actions</h3><p>Mutating tools use fixed templates, short expiry, and an explicit physical confirmation.</p></article>
 </div>
 
+## The V2 device
+
+<div class="ink-device-photo-row">
+  <figure class="ink-device-photo">
+    <img src="assets/hardware/v2-side-controls.jpg" alt="Side view of the V2 device showing the BOOT and PWR controls">
+    <figcaption>V2 side controls, including BOOT and PWR.</figcaption>
+  </figure>
+  <figure class="ink-device-photo">
+    <img src="assets/hardware/v2-response-card.jpg" alt="V2 device showing a returned response card on its e-paper display">
+    <figcaption>A returned response card remains visible on the e-paper display.</figcaption>
+  </figure>
+</div>
+
+The [hardware guide](hardware.md) records the observed enclosure and separates
+printed vendor markings from values verified by a probe.
+
 ## The logic, end to end
 
 ```mermaid

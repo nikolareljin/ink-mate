@@ -19,6 +19,18 @@ The ES8311 codec is a working assumption based on related board materials, not a
 
 Related vendor material distinguishes V1 and V2 non-touch boards. A store SKU does not establish the PCB revision, so InkMate uses explicit build profiles. V2 uses the ESP32-S3-PICO-1-N8R8 with 8 MB flash and 8 MB PSRAM. PCB silkscreen, package markings, `esptool flash-id`, and ESP-IDF boot diagnostics take precedence.
 
+## Observed V2 enclosure
+
+<figure class="ink-device-photo">
+  <img src="assets/hardware/v2-rear-board-label.jpg" alt="Rear label on the V2 e-paper device">
+  <figcaption>Rear enclosure label on the observed V2 device.</figcaption>
+</figure>
+
+The label is useful evidence for identifying the physical unit, but its printed
+specifications are vendor markings. Use the USB probe and boot diagnostics to
+verify revision, flash, and PSRAM before selecting a build profile. Published
+copies of the device photos have camera metadata removed.
+
 The V2 vendor ESP-IDF example confirms GPIO 6 for the e-paper power rail, GPIOs
 8-13 for panel control and SPI, GPIO 17 for battery power hold, GPIO 0 for
 BOOT, GPIO 18 for PWR, and GPIOs 47-48 for the shared I2C bus. Both buttons

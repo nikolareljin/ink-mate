@@ -2,6 +2,7 @@
 
 #include <array>
 #include <atomic>
+#include <cmath>
 #include <cstdint>
 #include <cstring>
 
@@ -30,6 +31,9 @@ constexpr std::size_t kWavHeaderBytes = 44;
 constexpr std::size_t kMaxPcmBytes = kSampleRate * 2 * kCaptureLimitMs / 1'000;
 constexpr std::size_t kMaxWavBytes = kWavHeaderBytes + kMaxPcmBytes;
 constexpr std::size_t kReadBytes = 1'024;
+constexpr std::uint32_t kNotificationMs = 55;
+constexpr std::size_t kNotificationFrames = kSampleRate * kNotificationMs / 1'000;
+constexpr float kNotificationAmplitude = 0.015F;
 
 std::atomic_bool capture_requested{false};
 std::atomic_bool capture_active{false};
@@ -199,6 +203,29 @@ esp_err_t initialize(CaptureResources* resources, const char** stage) {
     return ESP_OK;
 }
 
+void play_notification(CaptureResources* resources, bool success) {
+    if (resources->device == nullptr) return;
+    std::array<std::int16_t, kNotificationFrames * 2> pcm{};
+    const float frequency = success ? 1'176.0F : 392.0F;
+    constexpr float kPi = 3.14159265358979323846F;
+    for (std::size_t frame = 0; frame < kNotificationFrames; ++frame) {
+        const float phase = 2.0F * kPi * frequency * static_cast<float>(frame) / static_cast<float>(kSampleRate);
+        const auto sample = static_cast<std::int16_t>(std::sin(phase) * kNotificationAmplitude * 32767.0F);
+        pcm[frame * 2] = sample;
+        pcm[frame * 2 + 1] = sample;
+    }
+    if (!success) {
+        for (std::size_t frame = kNotificationFrames / 2; frame < kNotificationFrames; ++frame) {
+            pcm[frame * 2] = static_cast<std::int16_t>(pcm[frame * 2] / 2);
+            pcm[frame * 2 + 1] = static_cast<std::int16_t>(pcm[frame * 2 + 1] / 2);
+        }
+    }
+    if (esp_codec_dev_set_out_vol(resources->device, 8) != ESP_CODEC_DEV_OK ||
+        esp_codec_dev_write(resources->device, pcm.data(), static_cast<int>(pcm.size() * sizeof(std::int16_t))) != ESP_CODEC_DEV_OK) {
+        ESP_LOGW(kTag, "notification audio unavailable");
+    }
+}
+
 void capture_task(void* argument) {
     auto* context = static_cast<CaptureTaskContext*>(argument);
     auto* state = context->state;
@@ -243,9 +270,11 @@ void capture_task(void* argument) {
         if (submit_result == ESP_OK) {
             const esp_err_t display_result = inkmate::queue_response_card(card.title, card.body, report);
             if (display_result != ESP_OK) ESP_LOGW(kTag, "cannot queue gateway card: %s", esp_err_to_name(display_result));
+            play_notification(&resources, !card.is_error);
         } else {
             ESP_LOGW(kTag, "gateway submission failed: %s", esp_err_to_name(submit_result));
             inkmate::queue_response_card("Gateway unavailable", "Audio was not retained. Check Wi-Fi and enrollment.", report);
+            play_notification(&resources, false);
         }
     }
     heap_caps_free(wav);

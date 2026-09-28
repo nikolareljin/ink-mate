@@ -37,6 +37,8 @@ class Settings(BaseSettings):
     github_repositories_json: str = "{}"
     github_labels_json: str = "{}"
     enable_coding_agents: bool = False
+    adapter_host_url: str = ""
+    adapter_host_token: str = ""
 
     @property
     def devices(self) -> dict[str, str]:
