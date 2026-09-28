@@ -30,6 +30,28 @@ tracked firmware header and 200 x 200 black-and-white PNGs under ignored
 header. The PNGs are layout previews, not e-paper waveform or ghosting
 simulations.
 
+## State artwork
+
+The published previews are generated from the same SVG sources that produce
+the firmware header. They contain only display artwork, no labels from a source
+sheet or embedded text.
+
+| Ready | Recording | Sending |
+| --- | --- | --- |
+| ![Ready state](assets/device-states/ready.png) | ![Recording state](assets/device-states/recording.png) | ![Sending state](assets/device-states/sending.png) |
+
+| Processing | Confirmation | Cancelled |
+| --- | --- | --- |
+| ![Processing state](assets/device-states/processing.png) | ![Confirmation state](assets/device-states/confirmation.png) | ![Cancelled state](assets/device-states/cancelled.png) |
+
+## Verified V2 state
+
+The current V2 test image was built from the SVG-generated header and flashed
+through the backup-first helper. The device reports the V2 profile, 8 MB flash,
+8 MB PSRAM, working e-paper initialization, active controls, and a successful
+Wi-Fi connection. The flash verifier matched the bootloader, partition table,
+and application bytes after installation.
+
 ## Cards and refresh
 
 Home shows time, environment, battery estimate, Wi-Fi, and gateway state. Answer shows concise wrapped output. Tools shows configured model/host/repository/agent status. Confirmation shows the exact normalized operation, target, expiry, and controls. Offline/error shows stable codes while retaining the last useful content where possible.
