@@ -9,6 +9,7 @@ from inkmate_gateway.app import create_app
 from inkmate_gateway.config import Settings
 from inkmate_gateway.discovery import discovery_reply
 from inkmate_gateway.services import ActionService, SafeCommand
+from inkmate_gateway.services import AdapterHostClient
 
 
 class STT:
@@ -45,6 +46,10 @@ async def signed(client, method, path, content=b"", headers=None, *, device="des
 def test_default_settings_enroll_no_devices():
     settings = Settings(_env_file=None)
     assert settings.devices == {}
+
+
+def test_adapter_host_client_refuses_non_loopback_url():
+    assert not AdapterHostClient("http://192.0.2.20:8764", "x" * 32).configured
 
 
 def test_discovery_reply_uses_selected_address_and_enrolled_secret():
@@ -90,6 +95,51 @@ async def test_interaction_and_short_lived_audio(client):
 async def test_audio_size_limit(client):
     response = await signed(client, "POST", "/v1/interactions", b"x" * 101, {"Content-Type": "audio/wav"})
     assert response.status_code == 413
+
+
+async def test_adapter_request_uses_typed_parameters_without_chat():
+    class AdapterHost:
+        async def operation(self, **kwargs):
+            assert kwargs == {"device_id": "desk", "adapter_id": "workflow", "operation_id": "work.next"}
+            return {"mode": "read", "input_schema": {"properties": {"project": {"type": "enum"}}}}
+        async def invoke(self, **kwargs):
+            assert kwargs == {"device_id": "desk", "adapter_id": "workflow", "operation_id": "work.next", "parameters": {"project": "inbox"}}
+            return {"title": "Workflow", "body": "One task", "severity": "normal"}
+    class AdapterSTT:
+        async def transcribe(self, audio, content_type): return "adapter workflow work.next project=inbox"
+    app = create_app(Settings(device_secrets="desk:secret"), stt=AdapterSTT(), tts=TTS(), chat=Chat(), adapter_host=AdapterHost())
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as adapter_client:
+        response = await signed(adapter_client, "POST", "/v1/interactions", b"123", {"Content-Type": "audio/wav"})
+    assert response.status_code == 200
+    assert response.json()["card"]["title"] == "Workflow"
+    assert response.json()["card"]["body"] == "One task"
+
+
+async def test_mutating_adapter_request_requires_confirmation():
+    class AdapterHost:
+        async def operation(self, **kwargs):
+            return {"mode": "mutating", "input_schema": {"properties": {}}}
+        async def invoke(self, **kwargs):
+            return {"title": "Workflow", "body": "Changed", "severity": "normal"}
+    class AdapterSTT:
+        async def transcribe(self, audio, content_type): return "adapter workflow work.change"
+    app = create_app(Settings(device_secrets="desk:secret"), stt=AdapterSTT(), tts=TTS(), chat=Chat(), adapter_host=AdapterHost())
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as adapter_client:
+        response = await signed(adapter_client, "POST", "/v1/interactions", b"123", {"Content-Type": "audio/wav"})
+    assert response.status_code == 200
+    assert response.json()["card"]["kind"] == "confirmation"
+
+
+async def test_unavailable_adapter_returns_an_error_card():
+    class AdapterHost:
+        async def operation(self, **kwargs): raise RuntimeError("ADAPTER_HOST_UNAVAILABLE")
+    class AdapterSTT:
+        async def transcribe(self, audio, content_type): return "adapter workflow work.next"
+    app = create_app(Settings(device_secrets="desk:secret"), stt=AdapterSTT(), tts=TTS(), chat=Chat(), adapter_host=AdapterHost())
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as adapter_client:
+        response = await signed(adapter_client, "POST", "/v1/interactions", b"123", {"Content-Type": "audio/wav"})
+    assert response.status_code == 200
+    assert response.json()["card"]["kind"] == "error"
 
 
 async def test_snapshot(client):

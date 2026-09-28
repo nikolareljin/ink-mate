@@ -9,7 +9,7 @@ from .developer import ConfirmationService, GitHubIssueService, WorkItemService,
 from .discovery import start_discovery
 from .config import Settings, get_settings
 from .models import ActionResult, Card, ErrorDetail, InteractionResponse, Snapshot
-from .services import ActionService, AudioStore, FasterWhisperSTT, HttpTTS, OllamaProvider, SilentTTS, UnavailableSTT, host_health
+from .services import AdapterHostClient, ActionService, AudioStore, FasterWhisperSTT, HttpTTS, OllamaProvider, SilentTTS, UnavailableSTT, host_health
 def _default_stt(cfg: Settings):
     return FasterWhisperSTT(cfg.stt_model) if cfg.stt_backend == "faster-whisper" else UnavailableSTT()
 
@@ -19,7 +19,7 @@ def _default_tts(cfg: Settings):
 
 
 
-def create_app(settings: Settings | None = None, *, stt=None, tts=None, chat=None, actions=None, confirmations=None, work_items=None, github=None) -> FastAPI:
+def create_app(settings: Settings | None = None, *, stt=None, tts=None, chat=None, actions=None, confirmations=None, work_items=None, github=None, adapter_host=None) -> FastAPI:
     cfg = settings or get_settings()
     app = FastAPI(title="InkMate Gateway", version="0.2.0")
     app.state.settings = cfg
@@ -37,6 +37,7 @@ def create_app(settings: Settings | None = None, *, stt=None, tts=None, chat=Non
     app.state.chat = chat or OllamaProvider(cfg.ollama_url, cfg.ollama_model)
     app.state.actions = actions or ActionService(cfg.safe_commands, ttl=cfg.action_ttl_seconds)
     app.state.audio = AudioStore(cfg.audio_ttl_seconds)
+    app.state.adapter_host = adapter_host or AdapterHostClient(cfg.adapter_host_url, cfg.adapter_host_token)
 
     @app.on_event("startup")
     async def start_gateway_discovery():
@@ -81,6 +82,32 @@ def create_app(settings: Settings | None = None, *, stt=None, tts=None, chat=Non
             raise HTTPException(413, "audio is empty or too large")
         try:
             transcript = await app.state.stt.transcribe(audio, request.headers.get("content-type", "audio/wav"))
+            adapter_request = _adapter_request(transcript)
+            if adapter_request:
+                adapter_id, operation_id, parameters = adapter_request
+                try:
+                    operation = await app.state.adapter_host.operation(
+                        device_id=device_id, adapter_id=adapter_id, operation_id=operation_id
+                    )
+                    parameters = _coerce_adapter_parameters(parameters, operation)
+                except RuntimeError as exc:
+                    return InteractionResponse(
+                        device_id=device_id, transcript=transcript,
+                        card=Card(kind="error", title="Adapter unavailable", body=str(exc)[:240], severity="warning"),
+                    )
+                async def invoke_adapter() -> str:
+                    result = await app.state.adapter_host.invoke(device_id=device_id, adapter_id=adapter_id,
+                                                                 operation_id=operation_id, parameters=parameters)
+                    return result.get("body", "")[:240]
+                if operation["mode"] == "mutating":
+                    proposal = app.state.confirmations.propose(operation_id, adapter_id, device_id, invoke_adapter)
+                    return InteractionResponse(device_id=device_id, transcript=transcript,
+                        card=Card(kind="confirmation", title="Confirm adapter action", body=f"{adapter_id}: {operation_id}"[:240], footer="Short press: confirm | Hold: cancel"),
+                        pending_action=proposal)
+                result = await app.state.adapter_host.invoke(device_id=device_id, adapter_id=adapter_id,
+                                                             operation_id=operation_id, parameters=parameters)
+                return InteractionResponse(device_id=device_id, transcript=transcript,
+                    card=Card(kind="status", title=result.get("title", "Adapter")[:32], body=result.get("body", "")[:240], severity=result.get("severity", "normal")))
             answer = await app.state.chat.query(transcript)
         except RuntimeError as exc:
             raise HTTPException(503, str(exc)) from exc
@@ -239,3 +266,39 @@ def create_app(settings: Settings | None = None, *, stt=None, tts=None, chat=Non
 
 
 app = create_app()
+
+
+def _adapter_request(transcript: str) -> tuple[str, str, dict[str, str]] | None:
+    """Parse an explicit typed adapter request without forwarding voice text."""
+    parts = transcript.strip().split()
+    if len(parts) < 3 or parts[0].casefold() != "adapter":
+        return None
+    adapter_id, operation_id = parts[1], parts[2]
+    parameters: dict[str, str] = {}
+    for part in parts[3:]:
+        key, separator, value = part.partition("=")
+        if not separator or not key or not value or key in parameters:
+            raise RuntimeError("ADAPTER_REQUEST_INVALID")
+        parameters[key] = value
+    return adapter_id, operation_id, parameters
+
+
+def _coerce_adapter_parameters(values: dict[str, str], operation: dict) -> dict:
+    properties = operation.get("input_schema", {}).get("properties", {})
+    converted = {}
+    for name, value in values.items():
+        definition = properties.get(name)
+        if definition is None:
+            raise RuntimeError("ADAPTER_REQUEST_INVALID")
+        kind = definition.get("type")
+        try:
+            if kind == "integer": converted[name] = int(value)
+            elif kind == "number": converted[name] = float(value)
+            elif kind == "boolean":
+                if value.casefold() not in {"true", "false"}: raise ValueError
+                converted[name] = value.casefold() == "true"
+            elif kind == "string_array": converted[name] = value.split(",")
+            else: converted[name] = value
+        except ValueError as exc:
+            raise RuntimeError("ADAPTER_REQUEST_INVALID") from exc
+    return converted

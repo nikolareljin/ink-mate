@@ -17,6 +17,12 @@ V2 configures BOOT on GPIO0 and PWR on GPIO18 as active-low inputs with internal
 
 V2 BOOT holds capture up to 10 seconds of 16 kHz mono PCM into PSRAM. Release signs and sends the WAV to an enrolled gateway, then renders the returned card. The WAV buffer is released after the request and is never written to flash. Interaction card refreshes use one display worker, so e-paper refresh time does not block button polling.
 
+V2 renders monochrome state illustrations for ready, recording, sending,
+processing, confirmation, and cancellation. After a returned card it plays a
+very quiet completion tone. Gateway failure cards and transport failures use a
+lower, distinct tone. These cues require the V2 audio path and do not change
+the persisted display card.
+
 ## Cards and refresh
 
 Home shows time, environment, battery estimate, Wi-Fi, and gateway state. Answer shows concise wrapped output. Tools shows configured model/host/repository/agent status. Confirmation shows the exact normalized operation, target, expiry, and controls. Offline/error shows stable codes while retaining the last useful content where possible.

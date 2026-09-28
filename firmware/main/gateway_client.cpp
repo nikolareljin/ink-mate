@@ -67,11 +67,17 @@ esp_err_t parse_card(const char* response, inkmate::GatewayCard* card) {
     const cJSON* card_json = cJSON_GetObjectItemCaseSensitive(root, "card");
     const cJSON* title = card_json == nullptr ? nullptr : cJSON_GetObjectItemCaseSensitive(card_json, "title");
     const cJSON* body = card_json == nullptr ? nullptr : cJSON_GetObjectItemCaseSensitive(card_json, "body");
+    const cJSON* kind = card_json == nullptr ? nullptr : cJSON_GetObjectItemCaseSensitive(card_json, "kind");
+    const cJSON* severity = card_json == nullptr ? nullptr : cJSON_GetObjectItemCaseSensitive(card_json, "severity");
     const bool valid = cJSON_IsString(title) && title->valuestring != nullptr &&
                        cJSON_IsString(body) && body->valuestring != nullptr;
     if (valid) {
         std::strncpy(card->title, title->valuestring, sizeof(card->title) - 1);
         std::strncpy(card->body, body->valuestring, sizeof(card->body) - 1);
+        card->is_error = (cJSON_IsString(kind) && std::strcmp(kind->valuestring, "error") == 0) ||
+                         (cJSON_IsString(severity) &&
+                          (std::strcmp(severity->valuestring, "warning") == 0 ||
+                           std::strcmp(severity->valuestring, "critical") == 0));
     }
     cJSON_Delete(root);
     return valid ? ESP_OK : ESP_ERR_INVALID_RESPONSE;
@@ -85,6 +91,7 @@ esp_err_t submit_wav_to_gateway(const std::uint8_t* wav, std::size_t wav_size, G
     if (wav == nullptr || wav_size == 0 || card == nullptr) return ESP_ERR_INVALID_ARG;
     card->title[0] = '\0';
     card->body[0] = '\0';
+    card->is_error = false;
     GatewayEndpoint endpoint{};
     ESP_RETURN_ON_ERROR(discover_gateway(&endpoint), kTag, "discover gateway");
 

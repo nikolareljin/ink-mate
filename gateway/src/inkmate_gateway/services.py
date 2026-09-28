@@ -6,6 +6,7 @@ from datetime import timedelta
 from pathlib import Path
 from typing import Protocol
 from uuid import uuid4
+from urllib.parse import urlparse
 
 import httpx
 
@@ -80,6 +81,51 @@ class OllamaProvider:
             return {"status": "ok", "model": self.model}
         except Exception:
             return {"status": "unavailable", "model": self.model}
+
+
+class AdapterHostClient:
+    """Client for an optional loopback-only local adapter host."""
+    def __init__(self, base_url: str, token: str):
+        self.base_url, self.token = base_url.rstrip("/"), token
+
+    @property
+    def configured(self) -> bool:
+        parsed = urlparse(self.base_url)
+        return bool(parsed.scheme in {"http", "https"} and parsed.hostname in {"127.0.0.1", "::1", "localhost"}
+                    and len(self.token) >= 32)
+
+    async def invoke(self, *, device_id: str, adapter_id: str, operation_id: str, parameters: dict) -> dict:
+        if not self.configured:
+            raise RuntimeError("ADAPTER_HOST_UNAVAILABLE")
+        payload = {"invocation_id": str(uuid4()), "device_id": device_id, "adapter_id": adapter_id,
+                   "operation_id": operation_id, "parameters": parameters,
+                   "deadline": (utcnow() + timedelta(seconds=35)).isoformat()}
+        try:
+            async with httpx.AsyncClient(timeout=35) as client:
+                response = await client.post(f"{self.base_url}/v1/invocations", json=payload,
+                                             headers={"Authorization": f"Bearer {self.token}"})
+            response.raise_for_status()
+            return response.json()
+        except httpx.HTTPError as exc:
+            raise RuntimeError("ADAPTER_HOST_UNAVAILABLE") from exc
+
+    async def operation(self, *, device_id: str, adapter_id: str, operation_id: str) -> dict:
+        if not self.configured:
+            raise RuntimeError("ADAPTER_HOST_UNAVAILABLE")
+        try:
+            async with httpx.AsyncClient(timeout=5) as client:
+                response = await client.get(f"{self.base_url}/v1/adapters", params={"device_id": device_id},
+                                            headers={"Authorization": f"Bearer {self.token}"})
+            response.raise_for_status()
+            for adapter in response.json():
+                if adapter.get("adapter_id") != adapter_id:
+                    continue
+                for operation in adapter.get("manifest", {}).get("operations", []):
+                    if operation.get("operation_id") == operation_id:
+                        return operation
+            raise RuntimeError("ADAPTER_OPERATION_UNAVAILABLE")
+        except httpx.HTTPError as exc:
+            raise RuntimeError("ADAPTER_HOST_UNAVAILABLE") from exc
 
 
 @dataclass(frozen=True)

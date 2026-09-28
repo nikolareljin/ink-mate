@@ -190,6 +190,79 @@ private:
     }
 }
 
+void draw_line(std::array<std::uint8_t, kFrameBytes>* frame, int x0, int y0, int x1, int y1, int width = 2) {
+    const int dx = std::abs(x1 - x0);
+    const int sx = x0 < x1 ? 1 : -1;
+    const int dy = -std::abs(y1 - y0);
+    const int sy = y0 < y1 ? 1 : -1;
+    int error = dx + dy;
+    for (;;) {
+        fill_rect(frame, x0 - width / 2, y0 - width / 2, width, width);
+        if (x0 == x1 && y0 == y1) break;
+        const int doubled = 2 * error;
+        if (doubled >= dy) { error += dy; x0 += sx; }
+        if (doubled <= dx) { error += dx; y0 += sy; }
+    }
+}
+
+void draw_circle(std::array<std::uint8_t, kFrameBytes>* frame, int center_x, int center_y, int radius, int width = 2) {
+    int x = radius;
+    int y = 0;
+    int error = 1 - radius;
+    while (x >= y) {
+        fill_rect(frame, center_x + x - width / 2, center_y + y - width / 2, width, width);
+        fill_rect(frame, center_x + y - width / 2, center_y + x - width / 2, width, width);
+        fill_rect(frame, center_x - y - width / 2, center_y + x - width / 2, width, width);
+        fill_rect(frame, center_x - x - width / 2, center_y + y - width / 2, width, width);
+        fill_rect(frame, center_x - x - width / 2, center_y - y - width / 2, width, width);
+        fill_rect(frame, center_x - y - width / 2, center_y - x - width / 2, width, width);
+        fill_rect(frame, center_x + y - width / 2, center_y - x - width / 2, width, width);
+        fill_rect(frame, center_x + x - width / 2, center_y - y - width / 2, width, width);
+        ++y;
+        if (error < 0) error += 2 * y + 1;
+        else { --x; error += 2 * (y - x + 1); }
+    }
+}
+
+void draw_state_icon(std::array<std::uint8_t, kFrameBytes>* frame, inkmate::Intent intent) {
+    if (intent == inkmate::Intent::BeginRecording) {
+        draw_circle(frame, 100, 102, 20, 3);
+        fill_rect(frame, 88, 94, 24, 16);
+        draw_line(frame, 74, 104, 74, 122, 3);
+        draw_line(frame, 126, 104, 126, 122, 3);
+        draw_line(frame, 74, 122, 126, 122, 3);
+        draw_line(frame, 100, 122, 100, 138, 3);
+        draw_line(frame, 84, 138, 116, 138, 3);
+    } else if (intent == inkmate::Intent::SubmitRecording) {
+        draw_circle(frame, 88, 104, 24, 3);
+        fill_rect(frame, 81, 96, 5, 5);
+        fill_rect(frame, 96, 96, 5, 5);
+        draw_line(frame, 92, 113, 106, 119, 3);
+        draw_line(frame, 106, 119, 92, 125, 3);
+        draw_line(frame, 92, 125, 92, 113, 3);
+    } else if (intent == inkmate::Intent::NextCard) {
+        draw_circle(frame, 80, 104, 22, 3);
+        draw_circle(frame, 120, 104, 22, 3);
+        fill_rect(frame, 68, 92, 24, 24);
+        fill_rect(frame, 108, 92, 24, 24);
+        draw_circle(frame, 100, 104, 10, 3);
+    } else if (intent == inkmate::Intent::ConfirmAction) {
+        draw_circle(frame, 100, 106, 32, 3);
+        draw_line(frame, 80, 106, 94, 120, 5);
+        draw_line(frame, 94, 120, 122, 88, 5);
+    } else if (intent == inkmate::Intent::CancelAction) {
+        draw_circle(frame, 100, 106, 32, 3);
+        draw_line(frame, 82, 88, 118, 124, 5);
+        draw_line(frame, 118, 88, 82, 124, 5);
+    } else {
+        draw_circle(frame, 100, 94, 30, 3);
+        fill_rect(frame, 88, 88, 5, 7);
+        fill_rect(frame, 108, 88, 5, 7);
+        draw_line(frame, 86, 132, 114, 132, 3);
+        draw_line(frame, 100, 124, 100, 152, 3);
+    }
+}
+
 std::uint16_t glyph(char value) {
     if (value >= 'a' && value <= 'z') value = static_cast<char>(value - 'a' + 'A');
     switch (value) {
@@ -274,18 +347,11 @@ esp_err_t render_card(Intent intent, const BootReport& report, const char* title
         draw_text(&frame, 22, 24, title, 2, 21, 2);
         draw_text(&frame, 22, 64, body, 2, 21, 9);
     } else {
-        fill_rect(&frame, 48, 42, 104, 18);
-        fill_rect(&frame, 80, 80, 40, 40);
-        fill_rect(&frame, 36, 144, 128, 12);
-        if (report.rtc_detected) fill_rect(&frame, 36, 164, 52, 8);
-        if (report.environment_sensor_detected) fill_rect(&frame, 112, 164, 52, 8);
-        switch (intent) {
-            case Intent::NextCard: fill_rect(&frame, 24, 96, 32, 32); break;
-            case Intent::BeginRecording: fill_rect(&frame, 72, 88, 56, 56); break;
-            case Intent::SubmitRecording: fill_rect(&frame, 144, 96, 32, 32); break;
-            case Intent::ConfirmAction: fill_rect(&frame, 72, 144, 56, 16); break;
-            case Intent::CancelAction: fill_rect(&frame, 72, 144, 56, 16); fill_rect(&frame, 88, 128, 24, 48); break;
-            case Intent::None: break;
+        draw_state_icon(&frame, intent);
+        if (report.rtc_detected) draw_circle(&frame, 44, 166, 8, 2);
+        if (report.environment_sensor_detected) {
+            draw_circle(&frame, 156, 162, 6, 2);
+            draw_line(&frame, 156, 168, 156, 176, 2);
         }
     }
 

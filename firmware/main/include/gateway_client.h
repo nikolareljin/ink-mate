@@ -10,6 +10,7 @@ namespace inkmate {
 struct GatewayCard {
     char title[33];
     char body[241];
+    bool is_error;
 };
 
 // Discovers an enrolled gateway and submits one bounded WAV request.

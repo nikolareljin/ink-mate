@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# SCRIPT: dev
+# DESCRIPTION: Run the InkMate development command suite
+# USAGE: ./dev <command> [OPTIONS]
+# PARAMETERS:
+#   command    See ./dev --help
+# ----------------------------------------------------
+set -euo pipefail
+exec "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/scripts/cli.sh" "$@"
