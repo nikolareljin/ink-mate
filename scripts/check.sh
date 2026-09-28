@@ -15,8 +15,12 @@ shlib_import logging docker
 
 print_info "Checking InkMate"
 
-print_info "Validating documentation image paths"
-python3 scripts/check_doc_assets.py
+if command -v python3 >/dev/null 2>&1; then
+  print_info "Validating documentation image paths"
+  python3 scripts/check_doc_assets.py
+else
+  log_warn "Python unavailable; documentation image validation skipped"
+fi
 
 if command -v python3 >/dev/null 2>&1 && [[ -d gateway/tests ]]; then
   print_info "Running gateway tests"
