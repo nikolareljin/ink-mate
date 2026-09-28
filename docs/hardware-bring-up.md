@@ -1,17 +1,17 @@
-# Hardware bring-up
+# Bring up the hardware
 
-## Target
+## Start with the right board
 
-The initial target is the **With Bat, No Touch** ESP32-S3 1.54-inch e-paper
-variant. The product family also contains touch variants; their pin maps and
-input behavior are out of scope for the initial profile.
+The target is the **With Bat, No Touch** ESP32-S3 1.54-inch e-paper variant.
+Touch variants have different pin maps and input behavior, so they are not part
+of the current profile.
 
 Do not infer the board revision from the listing title. Photograph the PCB and
 record its silkscreen. Detect the chip package, flash, and PSRAM over USB. V2
 uses the ESP32-S3-PICO-1-N8R8 with 8 MB flash and 8 MB PSRAM; detection wins if
 the connected board differs.
 
-## Inspection
+## Inspect before flashing
 
 To install the pinned ESP-IDF toolchain locally (if needed), activate it, and
 inspect a connected board, run:
@@ -51,11 +51,11 @@ release. The report must contain `next card`, `begin recording`, and `submit
 recording`. Hold PWR for 2 seconds only when a powered-down board is safe: it
 releases the battery latch and USB may keep the board running.
 
-Before enabling peripherals, verify one at a time: e-paper, BOOT and PWR logic,
-ES8311 microphone/speaker, PCF85063 RTC, SHTC3, battery ADC/charger, Wi-Fi, and
-optional FAT32 microSD. A wrong V1/V2 pin profile can damage or lock the board.
+Before enabling peripherals, check them one at a time: e-paper, BOOT and PWR,
+microphone and speaker, RTC, sensor, battery, Wi-Fi, and optional microSD. A
+wrong V1 or V2 pin profile can damage or lock the board.
 
-## Battery reset matrix
+## Check battery resets
 
 Some product reviews report failure to restart on battery after reset. Validate
 each row on the exact hardware revision and firmware build. Record pass/fail,
@@ -77,7 +77,7 @@ avoid unattended reboots, and document that USB or a manual PWR cycle may be
 necessary. If the failure is electrical, firmware must expose the limitation
 rather than claim recovery.
 
-## Display acceptance
+## Check the display
 
 Exercise repeated partial refreshes, then a full refresh. Confirm legibility,
 ghosting limits, last-card persistence without power, and safe refresh timing at

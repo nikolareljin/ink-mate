@@ -6,13 +6,15 @@
 
 ![InkMate e-paper companion](docs/assets/inkmate-hero.png)
 
-**A persistent, local-first e-paper companion.**
+**A quiet, local-first e-paper companion.**
 
-InkMate is a local-first e-paper companion for the battery-equipped, non-touch
-Waveshare ESP32-S3 1.54-inch e-paper board. It records a question while the BOOT
-button is held, sends the audio to a trusted-LAN gateway, and leaves a concise
-answer on the 200 x 200 e-paper display. The gateway owns speech recognition,
-text-to-speech, and access to explicitly allowlisted tools.
+InkMate is for small moments when a phone or computer would be too much. Hold
+BOOT, speak, and release it. A nearby service turns that into a short response
+that stays on the 200 x 200 e-paper display, even after power is removed.
+
+The project keeps the device simple: it records audio, shows cards, and plays
+short replies. The trusted local service handles speech, response generation,
+and any carefully approved integrations.
 
 ## On the device
 
@@ -23,6 +25,36 @@ text-to-speech, and access to explicitly allowlisted tools.
 
 The device retains a returned response card on the display. Its side controls
 provide BOOT and PWR input.
+
+## Supported hardware
+
+InkMate is built for the battery-equipped, non-touch
+[Waveshare ESP32-S3 1.54-inch e-paper board](https://www.aliexpress.us/item/3256810104401869.html).
+
+- The tested device is the V2 battery-equipped, non-touch board with an
+  ESP32-S3-PICO-1-N8R8, 8 MB flash, and 8 MB PSRAM.
+- V1 and V2 non-touch profiles are available, but every board must be inspected
+  before flashing. A profile is not evidence that a particular board matches it.
+- Touch variants and unverified revisions are not supported.
+
+See the [hardware guide](docs/hardware.md) for the evidence behind these
+statements and the [bring-up guide](docs/hardware-bring-up.md) before flashing.
+
+## Made for a private, useful place
+
+Use InkMate to glance at home-automation status, control an approved local home
+assistant, dictate a note, keep an organizer card, or ask a short question from
+a desk or shelf. It is designed around a service you choose on your own network,
+not a third party listening to or monitoring your day.
+
+## Connect local services
+
+The optional adapter host connects InkMate to services already running on the
+host computer. It accepts only loopback HTTP endpoints or fixed local commands.
+Each connection is discovered, inspected, approved, and granted to a specific
+device. Read-only operations return cards; changes require physical confirmation
+on InkMate. See the [extension guide](docs/extensions.md) for the current
+manifest, approval, and invocation interface.
 
 > [!IMPORTANT]
 > The board revision and memory must be detected on real hardware before
@@ -135,15 +167,16 @@ Verify BOOT gestures after the V2 firmware is installed:
 ./scripts/verify-controls.sh /dev/ttyACM0
 ```
 
-## Intended controls
+## Controls
 
 - Hold BOOT for 700 ms to begin recording; release it to submit.
 - Press BOOT for less than 700 ms while idle to cycle cards.
 - When an action is pending, press BOOT briefly to confirm or hold it to cancel.
 - Hold PWR for 2 seconds to release the battery power latch. USB can keep the board powered.
 
-Host mutations are proposals first. Only fixed command templates are eligible,
-and a valid physical confirmation is required before execution.
+Changes to a connected local application are always shown on the device first.
+Only fixed command templates are eligible, and BOOT confirmation is required
+before anything runs.
 ## Documentation
 
 The published documentation site is available at
@@ -162,9 +195,8 @@ The published documentation site is available at
 - [Roadmap and implementation plan](docs/roadmap.md)
 - [Hardware and software sources](docs/sources.md)
 
-The documentation distinguishes verified listing facts, vendor claims,
-implementation defaults, and properties that still require measurement on the
-physical board.
+The documentation separates verified observations, vendor claims, and things
+that still need to be measured on a physical board.
 
 
 ## Development

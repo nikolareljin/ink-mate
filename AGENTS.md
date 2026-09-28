@@ -2,6 +2,16 @@
 
 Read `README.md` and the relevant document under `docs/` before changing code.
 
+## Public documentation
+
+- Write `README.md` and `docs/` for people who use, operate, or extend InkMate.
+- Keep contributor and agent operating instructions in this file, not public
+  documentation.
+- Do not add prompts, agent procedures, named-agent directions, or implementation
+  guidance for automated contributors to public pages.
+- Public pages may explain user-visible behavior, supported hardware, setup,
+  safety limits, and local-service contracts.
+
 - Keep the ESP32 a thin client; inference, secrets, and tool execution belong in
   the gateway.
 - Support V1 and V2 through explicit build profiles. Never silently guess pins.

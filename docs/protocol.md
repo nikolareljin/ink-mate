@@ -1,13 +1,12 @@
-# Protocol
+# Device and service protocol
 
-The source of truth is the versioned schema under `protocol/`. This document
-describes intended v1 behavior; implementations must reject incompatible major
-versions and ignore documented optional fields they do not understand.
+The versioned schemas under `protocol/` are the source of truth. This page is a
+guide to the current v1 exchange between the device and local service.
 
 Every message carries `protocol_version`, `request_id`, `device_id`, and a UTC
 timestamp. Request IDs are unique and confirmations are bound to both the
 originating request and paired device.
-## Request authentication
+## Signed requests
 
 Device requests send `X-InkMate-Device`, `X-InkMate-Timestamp`, and
 `X-InkMate-Signature`. The signature is hexadecimal HMAC-SHA256 over the
@@ -16,7 +15,7 @@ newlines. The gateway rejects unknown devices, stale timestamps, identity
 mismatches, and invalid signatures. See `protocol/README.md` for the canonical
 form.
 
-## Gateway discovery
+## Service discovery
 
 The device broadcasts `INKMATE/1 DISCOVER <device_id> <nonce>` to UDP port
 37653. An enrolled gateway replies with `INKMATE/1 GATEWAY <nonce> <url>

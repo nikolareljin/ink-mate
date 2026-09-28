@@ -1,10 +1,14 @@
-# Firmware design
+# Firmware on the device
 
-Firmware owns audio capture/playback, cards, sensors, connectivity, power, and physical confirmation; it does not run AI or host commands.
+Firmware handles audio, cards, sensors, connectivity, power, and physical
+confirmation. It does not run the local response service or execute host commands.
 
 ## States and controls
 
-The state machine covers boot diagnostics, provisioning, idle/home, recording, submitting, response playback, pending confirmation, offline, error, and safe sleep/shutdown. On boot it reports reset reason, selected profile, detected chip/flash/PSRAM, and safe peripheral probes without credentials.
+The state machine covers boot diagnostics, setup, idle/home, recording,
+submitting, response playback, pending confirmation, offline, error, and safe
+sleep or shutdown. At boot it reports the reset reason, selected profile, and
+detected chip, flash, and PSRAM without exposing credentials.
 
 | Context | BOOT gesture | Result |
 | --- | --- | --- |
@@ -44,23 +48,30 @@ sheet or embedded text.
 | --- | --- | --- |
 | ![Processing state](assets/device-states/processing.png) | ![Confirmation state](assets/device-states/confirmation.png) | ![Cancelled state](assets/device-states/cancelled.png) |
 
-## Verified V2 state
+## What has been checked on V2
 
-The current V2 test image was built from the SVG-generated header and flashed
-through the backup-first helper. The device reports the V2 profile, 8 MB flash,
-8 MB PSRAM, working e-paper initialization, active controls, and a successful
-Wi-Fi connection. The flash verifier matched the bootloader, partition table,
-and application bytes after installation.
+The current V2 image was built from the SVG-generated header and flashed through
+the backup-first helper. The device reports the V2 profile, 8 MB flash, 8 MB
+PSRAM, working e-paper initialization, active controls, and Wi-Fi connectivity.
+The flash verifier matched the bootloader, partition table, and application
+bytes after installation.
 
 ## Cards and refresh
 
-Home shows time, environment, battery estimate, Wi-Fi, and gateway state. Answer shows concise wrapped output. Tools shows configured model/host/repository/agent status. Confirmation shows the exact normalized operation, target, expiry, and controls. Offline/error shows stable codes while retaining the last useful content where possible.
+Home shows time, environment, battery estimate, Wi-Fi, and service state. Answer
+shows concise wrapped output. Tools shows configured integration status.
+Confirmation shows the exact operation, target, expiry, and controls. Offline
+and error cards keep the last useful content where possible.
 
 Layouts are bounded for 200 x 200 monochrome output. Partial refreshes are followed by configurable full refreshes to manage ghosting. A stale confirmation card must never remain actionable.
 
 ## Connectivity, audio, and power
 
-Secure provisioning requires a privately configured per-device proof of possession and never logs it. Public builds fail closed when it is absent. Wi-Fi credentials use ESP-IDF NVS; NVS encryption remains gated until a hardware-specific key-protection scheme and eFuse slot are deliberately provisioned. Gateway and AI credentials stay off public firmware. Requests and audio are bounded and timed out. Offline sensor/time cards remain useful while reconnect attempts use backoff and jitter.
+Secure provisioning requires a private per-device proof of possession and never
+logs it. Public builds stop setup when it is absent. Wi-Fi credentials use
+ESP-IDF NVS; NVS encryption remains gated until a hardware-specific key
+protection scheme and eFuse slot are provisioned. Service credentials stay off
+public firmware. Requests and audio are bounded and timed out.
 
 Gateway discovery uses authenticated UDP broadcast. Set
 `INKMATE_GATEWAY_INTERFACE` in ignored `.env` to select one LAN on a multi-homed
@@ -98,6 +109,9 @@ starts reuse it. No audio request is retained after the gateway returns a card.
 
 Use `scripts/verify-audio-capture.sh /dev/ttyDEVICE` during bench verification. It records only filtered capture diagnostics under ignored `hardware-reports/`; it does not write audio to disk.
 
-Docked mode favors responsiveness; battery mode limits radio/audio windows. Battery percentage is unavailable until calibrated. Automatic deep sleep and OTA reboot remain off until every applicable battery reset/wake/rollback scenario passes.
+Docked mode favors responsiveness; battery mode limits radio and audio windows.
+Battery percentage is unavailable until calibrated. Automatic deep sleep and OTA
+reboot remain off until every applicable battery reset, wake, and rollback
+scenario passes.
 
 OTA eventually uses a validated image, inactive partition, health confirmation, and rollback. A successful download alone does not make a battery reboot safe. USB ROM-download recovery must remain possible if provisioning, NVS, or OTA state is corrupt.

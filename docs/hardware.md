@@ -1,6 +1,9 @@
-# Hardware overview
+# Hardware
 
-InkMate initially targets the battery-equipped, non-touch variant. The selected product option was identified as `With Bat No Touch`; the generic “Touch Options” title covers multiple variants and does not establish that this unit has touch input. The public marketplace listing is not a revision-specific schematic.
+InkMate currently targets the battery-equipped, non-touch option of the
+[Waveshare ESP32-S3 1.54-inch e-paper board](https://www.aliexpress.us/item/3256810104401869.html).
+The selected option is `With Bat No Touch`. The product family includes touch
+variants, so a marketplace title is not enough to identify the board in hand.
 
 ## Evidence labels
 
@@ -9,15 +12,21 @@ InkMate initially targets the battery-equipped, non-touch variant. The selected 
 - **Working assumption:** useful for development, not yet confirmed on the unit.
 - **Unknown:** must remain disabled or unspecified until reliable evidence exists.
 
-## Described capabilities
+## What the listing describes
 
-The listing describes an ESP32-S3 dual-core LX7 MCU (up to 240 MHz), 2.4 GHz Wi-Fi, Bluetooth LE 5, a 1.54-inch 200 x 200 e-paper panel, audio capture/playback, PCF85063 RTC, SHTC3 temperature/humidity sensor, TF/microSD slot, lithium battery charging, PWR and BOOT buttons, and USB/UART/I2C/GPIO expansion through a 2 x 6 header. Each peripheral still needs a physical probe.
+The listing describes an ESP32-S3, Wi-Fi and Bluetooth LE, a 1.54-inch 200 x
+200 e-paper panel, audio, RTC, temperature/humidity sensor, microSD slot,
+battery charging, BOOT and PWR buttons, and a 2 x 6 expansion header. Treat
+these as useful starting points, not guarantees for every revision.
 
 The ES8311 codec is a working assumption based on related board materials, not a fact established by the linked marketplace listing. Battery capacity, charging limits, battery ADC circuit, panel driver, and expansion pinout are unknown.
 
-## Revision, memory, and pinout
+## Profiles and verified V2 memory
 
-Related vendor material distinguishes V1 and V2 non-touch boards. A store SKU does not establish the PCB revision, so InkMate uses explicit build profiles. V2 uses the ESP32-S3-PICO-1-N8R8 with 8 MB flash and 8 MB PSRAM. PCB silkscreen, package markings, `esptool flash-id`, and ESP-IDF boot diagnostics take precedence.
+Vendor material distinguishes V1 and V2 non-touch boards. InkMate keeps those
+profiles explicit because a store SKU does not establish a PCB revision. The
+tested V2 board uses ESP32-S3-PICO-1-N8R8 with 8 MB flash and 8 MB PSRAM.
+PCB markings, `esptool flash-id`, and ESP-IDF boot diagnostics take precedence.
 
 ## Observed V2 enclosure
 
@@ -26,20 +35,17 @@ Related vendor material distinguishes V1 and V2 non-touch boards. A store SKU do
   <figcaption>Rear enclosure label on the observed V2 device.</figcaption>
 </figure>
 
-The label is useful evidence for identifying the physical unit, but its printed
-specifications are vendor markings. Use the USB probe and boot diagnostics to
-verify revision, flash, and PSRAM before selecting a build profile. Published
-copies of the device photos have camera metadata removed.
+The label helps identify the physical unit, but its specifications are vendor
+markings. Use the USB probe and boot diagnostics before choosing a build
+profile. Published copies of the device photos have camera metadata removed.
 
-The V2 vendor ESP-IDF example confirms GPIO 6 for the e-paper power rail, GPIOs
-8-13 for panel control and SPI, GPIO 17 for battery power hold, GPIO 0 for
-BOOT, GPIO 18 for PWR, and GPIOs 47-48 for the shared I2C bus. Both buttons
-are active-low. InkMate uses these only in the
-explicit V2 profile. Add a new profile for another board revision, leave its
-unverified fields as `GPIO_NUM_NC`, and do not inherit V1 or V2 pins. Never
-copy a touch-model pinout or assume board revisions match.
+The V2 example confirms GPIO 6 for e-paper power, GPIOs 8-13 for panel control
+and SPI, GPIO 17 for battery power hold, GPIO 0 for BOOT, GPIO 18 for PWR, and
+GPIOs 47-48 for shared I2C. Both buttons are active-low. These values belong
+only to the V2 profile. A different board needs its own profile and verified
+pin map; do not copy pins from V1, V2, or a touch model.
 
-## Known limitations and risks
+## Limits to keep in mind
 
 - E-paper is slow, monochrome, susceptible to ghosting, and unsuitable for animation, though it retains an image without power.
 - Audio and Wi-Fi can dominate battery use despite low display standby power.
