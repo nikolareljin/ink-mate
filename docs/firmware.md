@@ -23,6 +23,13 @@ very quiet completion tone. Gateway failure cards and transport failures use a
 lower, distinct tone. These cues require the V2 audio path and do not change
 the persisted display card.
 
+`firmware/assets/icons/*.svg` is the editable source for state artwork.
+Run `./dev previews --write-header` after editing an SVG. That regenerates the
+tracked firmware header and 200 x 200 black-and-white PNGs under ignored
+`firmware/previews/`. `./dev previews --check` rejects a stale generated
+header. The PNGs are layout previews, not e-paper waveform or ghosting
+simulations.
+
 ## Cards and refresh
 
 Home shows time, environment, battery estimate, Wi-Fi, and gateway state. Answer shows concise wrapped output. Tools shows configured model/host/repository/agent status. Confirmation shows the exact normalized operation, target, expiry, and controls. Offline/error shows stable codes while retaining the last useful content where possible.

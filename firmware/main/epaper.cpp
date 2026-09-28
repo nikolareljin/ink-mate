@@ -1,4 +1,5 @@
 #include "board.h"
+#include "state_icons.generated.h"
 
 #include <array>
 #include <cstddef>
@@ -224,42 +225,38 @@ void draw_circle(std::array<std::uint8_t, kFrameBytes>* frame, int center_x, int
     }
 }
 
+template <std::size_t Count>
+void draw_icon(std::array<std::uint8_t, kFrameBytes>* frame,
+               const std::array<inkmate::assets::IconCommand, Count>& commands) {
+    for (const auto& command : commands) {
+        switch (command.primitive) {
+            case inkmate::assets::IconPrimitive::Line:
+                draw_line(frame, command.a, command.b, command.c, command.d, command.width);
+                break;
+            case inkmate::assets::IconPrimitive::Circle:
+                draw_circle(frame, command.a, command.b, command.c, command.width);
+                break;
+            case inkmate::assets::IconPrimitive::Rect:
+                fill_rect(frame, command.a, command.b, command.c, command.d);
+                break;
+            case inkmate::assets::IconPrimitive::Box:
+                draw_line(frame, command.a, command.b, command.a + command.c, command.b, command.width);
+                draw_line(frame, command.a + command.c, command.b, command.a + command.c, command.b + command.d, command.width);
+                draw_line(frame, command.a + command.c, command.b + command.d, command.a, command.b + command.d, command.width);
+                draw_line(frame, command.a, command.b + command.d, command.a, command.b, command.width);
+                break;
+        }
+    }
+}
+
 void draw_state_icon(std::array<std::uint8_t, kFrameBytes>* frame, inkmate::Intent intent) {
-    if (intent == inkmate::Intent::BeginRecording) {
-        draw_circle(frame, 100, 102, 20, 3);
-        fill_rect(frame, 88, 94, 24, 16);
-        draw_line(frame, 74, 104, 74, 122, 3);
-        draw_line(frame, 126, 104, 126, 122, 3);
-        draw_line(frame, 74, 122, 126, 122, 3);
-        draw_line(frame, 100, 122, 100, 138, 3);
-        draw_line(frame, 84, 138, 116, 138, 3);
-    } else if (intent == inkmate::Intent::SubmitRecording) {
-        draw_circle(frame, 88, 104, 24, 3);
-        fill_rect(frame, 81, 96, 5, 5);
-        fill_rect(frame, 96, 96, 5, 5);
-        draw_line(frame, 92, 113, 106, 119, 3);
-        draw_line(frame, 106, 119, 92, 125, 3);
-        draw_line(frame, 92, 125, 92, 113, 3);
-    } else if (intent == inkmate::Intent::NextCard) {
-        draw_circle(frame, 80, 104, 22, 3);
-        draw_circle(frame, 120, 104, 22, 3);
-        fill_rect(frame, 68, 92, 24, 24);
-        fill_rect(frame, 108, 92, 24, 24);
-        draw_circle(frame, 100, 104, 10, 3);
-    } else if (intent == inkmate::Intent::ConfirmAction) {
-        draw_circle(frame, 100, 106, 32, 3);
-        draw_line(frame, 80, 106, 94, 120, 5);
-        draw_line(frame, 94, 120, 122, 88, 5);
-    } else if (intent == inkmate::Intent::CancelAction) {
-        draw_circle(frame, 100, 106, 32, 3);
-        draw_line(frame, 82, 88, 118, 124, 5);
-        draw_line(frame, 118, 88, 82, 124, 5);
-    } else {
-        draw_circle(frame, 100, 94, 30, 3);
-        fill_rect(frame, 88, 88, 5, 7);
-        fill_rect(frame, 108, 88, 5, 7);
-        draw_line(frame, 86, 132, 114, 132, 3);
-        draw_line(frame, 100, 124, 100, 152, 3);
+    switch (intent) {
+        case inkmate::Intent::BeginRecording: draw_icon(frame, inkmate::assets::kRecording); break;
+        case inkmate::Intent::SubmitRecording: draw_icon(frame, inkmate::assets::kSending); break;
+        case inkmate::Intent::NextCard: draw_icon(frame, inkmate::assets::kProcessing); break;
+        case inkmate::Intent::ConfirmAction: draw_icon(frame, inkmate::assets::kConfirmation); break;
+        case inkmate::Intent::CancelAction: draw_icon(frame, inkmate::assets::kCancelled); break;
+        case inkmate::Intent::None: draw_icon(frame, inkmate::assets::kReady); break;
     }
 }
 

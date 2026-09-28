@@ -41,7 +41,7 @@ allowed = re.compile(
     r"reset_reason|i2c|wifi|ip_event|esp_netif|error|fatal|panic|assert|abort)\b",
     re.IGNORECASE,
 )
-blocked = re.compile(r"password|token|secret|credential|\bmac\b|\bssid\b", re.IGNORECASE)
+blocked = re.compile(r"password|token|secret|credential|\bmac\b|\bssid\b|connected with", re.IGNORECASE)
 
 with serial.Serial(port, 115200, timeout=0.2, rtscts=False, dsrdtr=False) as connection:
     connection.dtr = False

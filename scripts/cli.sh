@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 # SCRIPT: dev
 # DESCRIPTION: Run InkMate development and local adapter commands
-# USAGE: ./dev <install|build|run|test|status|devices|preflight|adapters|jobs> [OPTIONS]
+# USAGE: ./dev <install|build|run|test|status|devices|preflight|adapters|jobs|previews> [OPTIONS]
 # PARAMETERS:
 #   run gateway|adapter-host     Start a foreground service
 #   adapters COMMAND             Run adapter administration or install-service
 #   jobs                         List retained adapter jobs
+#   previews                     Render black-and-white V2 state PNGs
 # ----------------------------------------------------
 set -euo pipefail
 
@@ -25,6 +26,7 @@ case "$verb" in
   preflight) exec "$repo_dir/scripts/check.sh" "$@" ;;
   adapters) exec "$repo_dir/scripts/adapterctl.sh" "$@" ;;
   jobs) exec "$repo_dir/scripts/adapterctl.sh" jobs "$@" ;;
+  previews) exec "$repo_dir/scripts/render-display-previews.py" "$@" ;;
   ''|-h|--help) sed -n '/^# SCRIPT:/,/^# ----------------------------------------------------/s/^# \{0,1\}//p' "$0" ;;
   *) echo "unknown command: $verb" >&2; exec "$0" --help ;;
 esac
