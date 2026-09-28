@@ -17,6 +17,39 @@ On first boot, the serial log reports chip, flash, PSRAM, reset reason, selected
 
 Deep sleep and OTA reboot default off because the supplied listing contains a report of battery restart failure. Enable each only after completing `docs/hardware-bring-up.md`'s reset matrix.
 
+## V2 microphone capture
+
+V2 uses the vendor-confirmed ES8311 path: I2C GPIO47/48, I2S
+MCLK/BCLK/WS/DIN GPIO14/15/38/16, and speaker PA GPIO46. No audio rail-enable
+GPIO is configured because the vendor V2 board profile does not specify one. A BOOT hold of at least 700 ms
+captures at most 10 seconds of 16 kHz mono PCM in PSRAM and validates a WAV
+header. An enrolled gateway receives the buffer only after release, returns a
+bounded card, and the firmware releases the buffer. It does not retain
+recordings.
+
+Enroll a device on the gateway host before flashing the private image:
+
+```sh
+./scripts/enroll-v2-device.sh desk-v2
+./scripts/build-firmware.sh v2
+```
+
+The helper creates ignored private configuration and refuses to replace an
+existing enrollment. `compose.device.yaml` starts the gateway with Linux host
+networking, allowing the gateway to determine its reachable address without a
+tracked local IP.
+
+After flashing a verified V2 image, run:
+
+```sh
+./scripts/verify-audio-capture.sh /dev/ttyACM0
+```
+
+Hold BOOT, speak, then release it. A successful capture logs `capture complete`
+with nonzero PCM and WAV byte counts. New board profiles must leave the audio
+pins as `GPIO_NUM_NC` until the matching revision schematic and physical probe
+confirm them.
+
 ## Host tests
 
 The state machine has no ESP-IDF dependency:

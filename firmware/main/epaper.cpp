@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <cstring>
 #include <initializer_list>
+#include <string_view>
 
 #include "board_profile.h"
 #include "driver/gpio.h"
@@ -12,6 +13,7 @@
 #include "esp_check.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
+#include "freertos/queue.h"
 #include "freertos/task.h"
 
 namespace {
@@ -187,6 +189,57 @@ private:
         for (int column = x; column < x + width; ++column) set_pixel(frame, column, row, true);
     }
 }
+
+std::uint16_t glyph(char value) {
+    if (value >= 'a' && value <= 'z') value = static_cast<char>(value - 'a' + 'A');
+    switch (value) {
+        case 'A': return 0b010101111101101; case 'B': return 0b110101110101110;
+        case 'C': return 0b011100100100011; case 'D': return 0b110101101101110;
+        case 'E': return 0b111100110100111; case 'F': return 0b111100110100100;
+        case 'G': return 0b011100101101011; case 'H': return 0b101101111101101;
+        case 'I': return 0b111010010010111; case 'J': return 0b001001001101010;
+        case 'K': return 0b101101110101101; case 'L': return 0b100100100100111;
+        case 'M': return 0b101111111101101; case 'N': return 0b101111111111101;
+        case 'O': return 0b010101101101010; case 'P': return 0b110101110100100;
+        case 'Q': return 0b010101101111011; case 'R': return 0b110101110101101;
+        case 'S': return 0b011100010001110; case 'T': return 0b111010010010010;
+        case 'U': return 0b101101101101111; case 'V': return 0b101101101101010;
+        case 'W': return 0b101101111111101; case 'X': return 0b101101010101101;
+        case 'Y': return 0b101101010010010; case 'Z': return 0b111001010100111;
+        case '0': return 0b111101101101111; case '1': return 0b010110010010111;
+        case '2': return 0b110001111100111; case '3': return 0b110001110001110;
+        case '4': return 0b101101111001001; case '5': return 0b111100110001110;
+        case '6': return 0b011100111101111; case '7': return 0b111001010010010;
+        case '8': return 0b111101111101111; case '9': return 0b111101111001110;
+        case '.': return 0b000000000000010; case ',': return 0b000000000010100;
+        case ':': return 0b000010000010000; case '-': return 0b000000111000000;
+        case '?': return 0b110001010000010; case '!': return 0b010010010000010;
+        case '/': return 0b001001010100100; default: return 0;
+    }
+}
+
+void draw_text(std::array<std::uint8_t, kFrameBytes>* frame, int x, int y, std::string_view text,
+               int scale, int columns, int rows) {
+    int column = 0;
+    int row = 0;
+    for (char character : text) {
+        if (character == '\n' || column >= columns) {
+            column = 0;
+            ++row;
+            if (character == '\n') continue;
+        }
+        if (row >= rows) return;
+        const std::uint16_t pixels = glyph(character);
+        for (int glyph_row = 0; glyph_row < 5; ++glyph_row) {
+            for (int glyph_column = 0; glyph_column < 3; ++glyph_column) {
+                if ((pixels & (1U << (14 - glyph_row * 3 - glyph_column))) == 0) continue;
+                fill_rect(frame, x + (column * 4 + glyph_column) * scale,
+                          y + (row * 6 + glyph_row) * scale, scale, scale);
+            }
+        }
+        ++column;
+    }
+}
 #endif
 
 }  // namespace
@@ -195,7 +248,17 @@ namespace inkmate {
 
 namespace {
 
-esp_err_t render_card(Intent intent, const BootReport& report) {
+struct RenderRequest {
+    Intent intent;
+    BootReport report;
+    char title[33];
+    char body[241];
+    bool response;
+};
+
+QueueHandle_t interaction_queue{};
+
+esp_err_t render_card(Intent intent, const BootReport& report, const char* title = nullptr, const char* body = nullptr) {
 #if !CONFIG_INKMATE_BOARD_V2
     (void)intent;
     (void)report;
@@ -207,18 +270,23 @@ esp_err_t render_card(Intent intent, const BootReport& report) {
     fill_rect(&frame, 8, 184, 184, 8);
     fill_rect(&frame, 8, 8, 8, 184);
     fill_rect(&frame, 184, 8, 8, 184);
-    fill_rect(&frame, 48, 42, 104, 18);
-    fill_rect(&frame, 80, 80, 40, 40);
-    fill_rect(&frame, 36, 144, 128, 12);
-    if (report.rtc_detected) fill_rect(&frame, 36, 164, 52, 8);
-    if (report.environment_sensor_detected) fill_rect(&frame, 112, 164, 52, 8);
-    switch (intent) {
-        case Intent::NextCard: fill_rect(&frame, 24, 96, 32, 32); break;
-        case Intent::BeginRecording: fill_rect(&frame, 72, 88, 56, 56); break;
-        case Intent::SubmitRecording: fill_rect(&frame, 144, 96, 32, 32); break;
-        case Intent::ConfirmAction: fill_rect(&frame, 72, 144, 56, 16); break;
-        case Intent::CancelAction: fill_rect(&frame, 72, 144, 56, 16); fill_rect(&frame, 88, 128, 24, 48); break;
-        case Intent::None: break;
+    if (title != nullptr && body != nullptr) {
+        draw_text(&frame, 22, 24, title, 2, 21, 2);
+        draw_text(&frame, 22, 64, body, 2, 21, 9);
+    } else {
+        fill_rect(&frame, 48, 42, 104, 18);
+        fill_rect(&frame, 80, 80, 40, 40);
+        fill_rect(&frame, 36, 144, 128, 12);
+        if (report.rtc_detected) fill_rect(&frame, 36, 164, 52, 8);
+        if (report.environment_sensor_detected) fill_rect(&frame, 112, 164, 52, 8);
+        switch (intent) {
+            case Intent::NextCard: fill_rect(&frame, 24, 96, 32, 32); break;
+            case Intent::BeginRecording: fill_rect(&frame, 72, 88, 56, 56); break;
+            case Intent::SubmitRecording: fill_rect(&frame, 144, 96, 32, 32); break;
+            case Intent::ConfirmAction: fill_rect(&frame, 72, 144, 56, 16); break;
+            case Intent::CancelAction: fill_rect(&frame, 72, 144, 56, 16); fill_rect(&frame, 88, 128, 24, 48); break;
+            case Intent::None: break;
+        }
     }
 
     Epaper panel;
@@ -235,6 +303,65 @@ esp_err_t render_boot_card(const BootReport& report) { return render_card(Intent
 
 esp_err_t render_interaction_card(Intent intent, const BootReport& report) {
     return render_card(intent, report);
+}
+
+namespace {
+
+[[maybe_unused]] void interaction_renderer_task(void*) {
+    RenderRequest request{};
+    for (;;) {
+        if (xQueueReceive(interaction_queue, &request, portMAX_DELAY) == pdPASS) {
+            const esp_err_t result = render_card(request.intent, request.report,
+                                                 request.response ? request.title : nullptr,
+                                                 request.response ? request.body : nullptr);
+            if (result != ESP_OK) ESP_LOGW(kTag, "cannot render interaction card: %s", esp_err_to_name(result));
+        }
+    }
+}
+
+}  // namespace
+
+esp_err_t start_interaction_renderer() {
+#if !CONFIG_INKMATE_BOARD_V2
+    return ESP_ERR_NOT_SUPPORTED;
+#else
+    if (interaction_queue != nullptr) return ESP_ERR_INVALID_STATE;
+    interaction_queue = xQueueCreate(4, sizeof(RenderRequest));
+    if (interaction_queue == nullptr) return ESP_ERR_NO_MEM;
+    if (xTaskCreate(interaction_renderer_task, "inkmate_display", 5 * 1024, nullptr, 4, nullptr) != pdPASS) {
+        vQueueDelete(interaction_queue);
+        interaction_queue = nullptr;
+        return ESP_ERR_NO_MEM;
+    }
+    return ESP_OK;
+#endif
+}
+
+esp_err_t queue_interaction_card(Intent intent, const BootReport& report) {
+#if !CONFIG_INKMATE_BOARD_V2
+    (void)intent;
+    (void)report;
+    return ESP_ERR_NOT_SUPPORTED;
+#else
+    if (interaction_queue == nullptr) return ESP_ERR_INVALID_STATE;
+    const RenderRequest request{intent, report, {}, {}, false};
+    return xQueueSend(interaction_queue, &request, 0) == pdPASS ? ESP_OK : ESP_ERR_TIMEOUT;
+#endif
+}
+
+esp_err_t queue_response_card(const char* title, const char* body, const BootReport& report) {
+#if !CONFIG_INKMATE_BOARD_V2
+    (void)title;
+    (void)body;
+    (void)report;
+    return ESP_ERR_NOT_SUPPORTED;
+#else
+    if (interaction_queue == nullptr || title == nullptr || body == nullptr) return ESP_ERR_INVALID_ARG;
+    RenderRequest request{Intent::None, report, {}, {}, true};
+    std::strncpy(request.title, title, sizeof(request.title) - 1);
+    std::strncpy(request.body, body, sizeof(request.body) - 1);
+    return xQueueSend(interaction_queue, &request, 0) == pdPASS ? ESP_OK : ESP_ERR_TIMEOUT;
+#endif
 }
 
 }  // namespace inkmate

@@ -22,6 +22,10 @@ class Settings(BaseSettings):
     audio_ttl_seconds: int = 300
     action_ttl_seconds: int = 60
     max_audio_bytes: int = 4 * 1024 * 1024
+    discovery_port: int = 37653
+    gateway_port: int = 8080
+    bind_address: str = ""
+    gateway_network: str = ""
     safe_commands_json: str = "{}"
     action_phrases_json: str = "{}"
     workspace_allowlist: str = ""

@@ -27,6 +27,20 @@ config INKMATE_GATEWAY_URI
     string "Default gateway URI"
     default "http://inkmate.local:8080"
 
+config INKMATE_GATEWAY_DEVICE_ID
+    string "Gateway device identity"
+    default ""
+    help
+        Private, enrolled device ID used for gateway discovery and request authentication.
+        Keep empty in public builds. Supply it through an ignored private SDK config overlay.
+
+config INKMATE_GATEWAY_DEVICE_SECRET
+    string "Gateway device secret"
+    default ""
+    help
+        Private per-device HMAC secret. Keep empty in public builds. Supply it through
+        an ignored private SDK config overlay. The firmware never logs this value.
+
 config INKMATE_PROVISIONING_POP
     string "BLE provisioning proof of possession"
     default ""
@@ -35,5 +49,13 @@ config INKMATE_PROVISIONING_POP
         security 1. Keep this empty in public builds: provisioning then fails
         closed. Supply it through a private sdkconfig overlay for bench use.
         Use at least 16 characters and never commit that overlay.
+
+config INKMATE_WIFI_SSID
+    string "Private Wi-Fi SSID"
+    default ""
+
+config INKMATE_WIFI_PASSWORD
+    string "Private Wi-Fi password"
+    default ""
 
 endmenu

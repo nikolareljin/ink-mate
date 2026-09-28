@@ -6,6 +6,7 @@ from fastapi import Body, Depends, FastAPI, Header, HTTPException, Request
 from fastapi.responses import Response
 
 from .developer import ConfirmationService, GitHubIssueService, WorkItemService, classify_voice_intent
+from .discovery import start_discovery
 from .config import Settings, get_settings
 from .models import ActionResult, Card, ErrorDetail, InteractionResponse, Snapshot
 from .services import ActionService, AudioStore, FasterWhisperSTT, HttpTTS, OllamaProvider, SilentTTS, UnavailableSTT, host_health
@@ -36,6 +37,16 @@ def create_app(settings: Settings | None = None, *, stt=None, tts=None, chat=Non
     app.state.chat = chat or OllamaProvider(cfg.ollama_url, cfg.ollama_model)
     app.state.actions = actions or ActionService(cfg.safe_commands, ttl=cfg.action_ttl_seconds)
     app.state.audio = AudioStore(cfg.audio_ttl_seconds)
+
+    @app.on_event("startup")
+    async def start_gateway_discovery():
+        app.state.discovery = await start_discovery(
+            cfg.devices, cfg.discovery_port, cfg.gateway_port, cfg.bind_address, cfg.gateway_network
+        )
+
+    @app.on_event("shutdown")
+    async def stop_gateway_discovery():
+        app.state.discovery.close()
 
     async def authenticate(
         request: Request,

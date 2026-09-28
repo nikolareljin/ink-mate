@@ -38,7 +38,7 @@ duration = int(sys.argv[2])
 report = sys.argv[3]
 allowed = re.compile(
     r"\b(boot|octal_psram|esp_psram|app_init|spi_flash|inkmate(?:\.board)?|main_task|"
-    r"reset_reason|i2c|error|fatal|panic|assert|abort)\b",
+    r"reset_reason|i2c|wifi|ip_event|esp_netif|error|fatal|panic|assert|abort)\b",
     re.IGNORECASE,
 )
 blocked = re.compile(r"password|token|secret|credential|\bmac\b|\bssid\b", re.IGNORECASE)

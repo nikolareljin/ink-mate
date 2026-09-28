@@ -1,4 +1,5 @@
 #include "board.h"
+#include "audio_capture.h"
 
 #include "board_profile.h"
 #include "driver/gpio.h"
@@ -50,8 +51,14 @@ const char* intent_name(inkmate::Intent intent) {
 void dispatch(Controls* controls, inkmate::Intent intent) {
     if (intent == inkmate::Intent::None) return;
     ESP_LOGI(kTag, "BOOT: %s", intent_name(intent));
-    const esp_err_t result = inkmate::render_interaction_card(intent, controls->report);
-    if (result != ESP_OK) ESP_LOGW(kTag, "cannot refresh control card: %s", esp_err_to_name(result));
+    if (intent == inkmate::Intent::BeginRecording) {
+        const esp_err_t audio_result = inkmate::start_audio_capture(controls->state, controls->report);
+        if (audio_result != ESP_OK) ESP_LOGW(kTag, "cannot start microphone capture: %s", esp_err_to_name(audio_result));
+    } else if (intent == inkmate::Intent::SubmitRecording) {
+        inkmate::stop_audio_capture();
+    }
+    const esp_err_t result = inkmate::queue_interaction_card(intent, controls->report);
+    if (result != ESP_OK) ESP_LOGW(kTag, "cannot queue control card: %s", esp_err_to_name(result));
 }
 
 void handle_boot_press(Controls* controls, TickType_t now) {
@@ -71,6 +78,7 @@ void scan_boot(Controls* controls, TickType_t now) {
     Button& button = controls->boot;
     const bool raw_pressed = pressed(button.pin);
     if (raw_pressed != button.candidate_pressed) {
+        ESP_LOGI(kTag, "BOOT raw level: %s", raw_pressed ? "pressed" : "released");
         button.candidate_pressed = raw_pressed;
         button.candidate_started = now;
     }

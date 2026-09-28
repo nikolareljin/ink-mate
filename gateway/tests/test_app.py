@@ -7,6 +7,7 @@ from httpx import ASGITransport, AsyncClient
 
 from inkmate_gateway.app import create_app
 from inkmate_gateway.config import Settings
+from inkmate_gateway.discovery import discovery_reply
 from inkmate_gateway.services import ActionService, SafeCommand
 
 
@@ -44,6 +45,33 @@ async def signed(client, method, path, content=b"", headers=None, *, device="des
 def test_default_settings_enroll_no_devices():
     settings = Settings(_env_file=None)
     assert settings.devices == {}
+
+
+def test_discovery_reply_uses_selected_address_and_enrolled_secret():
+    reply = discovery_reply(
+        b"INKMATE/1 DISCOVER desk 0123456789abcdef0123456789abcdef",
+        "192.0.2.20",
+        {"desk": "secret"},
+        8080,
+        "192.0.2.10",
+        now=1_700_000_000,
+    )
+    assert reply is not None
+    fields = reply.decode().split()
+    assert fields[:4] == ["INKMATE/1", "GATEWAY", "0123456789abcdef0123456789abcdef", "http://192.0.2.10:8080"]
+    assert fields[4] == "1700000000"
+    canonical = "DISCOVER\n0123456789abcdef0123456789abcdef\nhttp://192.0.2.10:8080\n1700000000"
+    assert fields[5] == hmac.new(b"secret", canonical.encode(), hashlib.sha256).hexdigest()
+
+
+def test_discovery_rejects_unknown_devices_and_bad_nonces():
+    assert discovery_reply(b"INKMATE/1 DISCOVER unknown 0123456789abcdef0123456789abcdef", "192.0.2.20", {"desk": "secret"}, 8080) is None
+    assert discovery_reply(b"INKMATE/1 DISCOVER desk not-a-nonce", "192.0.2.20", {"desk": "secret"}, 8080) is None
+
+
+def test_discovery_rejects_device_outside_selected_network():
+    request = b"INKMATE/1 DISCOVER desk 0123456789abcdef0123456789abcdef"
+    assert discovery_reply(request, "192.0.3.20", {"desk": "secret"}, 8080, gateway_network="192.0.2.0/24") is None
 
 
 async def test_auth_required(app):

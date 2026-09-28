@@ -16,6 +16,16 @@ newlines. The gateway rejects unknown devices, stale timestamps, identity
 mismatches, and invalid signatures. See `protocol/README.md` for the canonical
 form.
 
+## Gateway discovery
+
+The device broadcasts `INKMATE/1 DISCOVER <device_id> <nonce>` to UDP port
+37653. An enrolled gateway replies with `INKMATE/1 GATEWAY <nonce> <url>
+<unix_timestamp> <signature>`. The signature is HMAC-SHA256 over `DISCOVER`,
+the nonce, URL, and timestamp, each separated by a newline. The signed timestamp
+authorizes the immediate request after a cold boot. The device accepts only a
+reply signed with its enrolled device secret. No LAN address is compiled into
+firmware or tracked configuration.
+
 
 ## Endpoints
 
