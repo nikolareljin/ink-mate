@@ -99,6 +99,26 @@ body {
   transform: rotate(1deg);
 }
 
+.ink-device-photo {
+  max-width: 23rem;
+  margin: 1.5rem auto 2rem;
+  text-align: center;
+}
+
+.ink-device-photo img {
+  display: block;
+  width: 100%;
+  border: 1px solid rgba(23, 75, 77, .2);
+  border-radius: 1rem;
+  box-shadow: 0 .8rem 2rem rgba(23, 32, 31, .16);
+}
+
+.ink-device-photo figcaption {
+  margin-top: .65rem;
+  font-size: .78rem;
+  line-height: 1.45;
+}
+
 .ink-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
