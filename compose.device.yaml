@@ -5,6 +5,8 @@ services:
     restart: unless-stopped
     env_file:
       - .env
+    environment:
+      INKMATE_HTTP_BIND_ADDRESS: ${INKMATE_BIND_ADDRESS}
     network_mode: host
     # Host networking reaches a loopback-only local model service directly.
     security_opt:

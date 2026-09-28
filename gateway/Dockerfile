@@ -16,4 +16,4 @@ RUN pip install --no-cache-dir ".[audio]"
 USER inkmate
 EXPOSE 8080
 EXPOSE 37653/udp
-CMD ["sh", "-c", "uvicorn inkmate_gateway.app:app --host ${INKMATE_BIND_ADDRESS:-0.0.0.0} --port ${INKMATE_GATEWAY_PORT:-8080}"]
+CMD ["sh", "-c", "uvicorn inkmate_gateway.app:app --host ${INKMATE_HTTP_BIND_ADDRESS:-0.0.0.0} --port ${INKMATE_GATEWAY_PORT:-8080}"]
