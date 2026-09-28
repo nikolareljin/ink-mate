@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate documentation image paths as they are served by MkDocs."""
+"""Validate documentation image paths and MkDocs HTML image restrictions."""
 
 from __future__ import annotations
 
@@ -14,16 +14,16 @@ MARKDOWN_IMAGE = re.compile(r"!\[[^]]*\]\(([^)\s]+)")
 HTML_IMAGE = re.compile(r"<img\b[^>]*\bsrc=[\"']([^\"']+)[\"']", re.IGNORECASE)
 
 
-def image_paths(text: str) -> list[str]:
-    return MARKDOWN_IMAGE.findall(text) + HTML_IMAGE.findall(text)
+def image_paths(text: str) -> list[tuple[str, str]]:
+    return [("markdown", path) for path in MARKDOWN_IMAGE.findall(text)] + [
+        ("html", path) for path in HTML_IMAGE.findall(text)
+    ]
 
 
 def expected_asset_prefix(source: Path) -> str:
     if source == ROOT / "README.md":
         return "docs/assets/"
-    relative = source.relative_to(DOCS)
-    depth = len(relative.parts) - (1 if relative.name == "index.md" else 0)
-    return "../" * depth + "assets/"
+    return "assets/"
 
 
 def main() -> int:
@@ -31,8 +31,13 @@ def main() -> int:
     sources = [ROOT / "README.md", *sorted(DOCS.rglob("*.md"))]
     for source in sources:
         prefix = expected_asset_prefix(source)
-        for target in image_paths(source.read_text()):
+        for kind, target in image_paths(source.read_text()):
             if target.startswith(("http://", "https://", "data:")):
+                continue
+            if kind == "html" and source not in {ROOT / "README.md", DOCS / "index.md"}:
+                errors.append(
+                    f"{source.relative_to(ROOT)}: use Markdown image syntax outside the home page: {target}"
+                )
                 continue
             if not target.startswith(prefix):
                 errors.append(
