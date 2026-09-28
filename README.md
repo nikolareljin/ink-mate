@@ -4,15 +4,15 @@
   <img src="docs/assets/inkmate-logo.png" alt="InkMate logo" width="180">
 </p>
 
-![InkMate e-paper AI desk companion](docs/assets/inkmate-hero.png)
+![InkMate e-paper companion](docs/assets/inkmate-hero.png)
 
-**A persistent, local-first voice interface for AI and trusted tools.**
+**A persistent, local-first e-paper companion.**
 
-InkMate is a local-first AI desk companion for the battery-equipped, non-touch
+InkMate is a local-first e-paper companion for the battery-equipped, non-touch
 Waveshare ESP32-S3 1.54-inch e-paper board. It records a question while the BOOT
 button is held, sends the audio to a trusted-LAN gateway, and leaves a concise
 answer on the 200 x 200 e-paper display. The gateway owns speech recognition,
-AI providers, text-to-speech, and access to explicitly allowlisted tools.
+text-to-speech, and access to explicitly allowlisted tools.
 
 > [!IMPORTANT]
 > The board revision and memory must be detected on real hardware before
@@ -149,7 +149,6 @@ The published documentation site is available at
 - [Troubleshooting and recovery](docs/troubleshooting.md)
 - [Roadmap and implementation plan](docs/roadmap.md)
 - [Hardware and software sources](docs/sources.md)
-- [Brand and application assets](docs/branding.md)
 
 The documentation distinguishes verified listing facts, vendor claims,
 implementation defaults, and properties that still require measurement on the
