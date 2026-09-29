@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # SCRIPT: dev
 # DESCRIPTION: Run InkMate development and local adapter commands
-# USAGE: ./dev <install|build|run|test|status|devices|preflight|adapters|jobs|previews> [OPTIONS]
+# USAGE: ./dev <install|build|run|stop|test|status|devices|preflight|adapters|jobs|previews> [OPTIONS]
 # PARAMETERS:
 #   run gateway|adapter-host     Start a foreground service
+#   stop                        Stop the InkMate gateway container
 #   adapters COMMAND             Run adapter administration or install-service
 #   jobs                         List retained adapter jobs
 #   previews                     Render black-and-white V2 state PNGs
@@ -21,6 +22,7 @@ case "$verb" in
       adapter-host) shift; exec "$repo_dir/scripts/start-adapter-host.sh" "$@" ;;
       *) echo "run requires gateway or adapter-host" >&2; exit 2 ;;
     esac ;;
+  stop) exec "$repo_dir/scripts/stop-device-gateway.sh" "$@" ;;
   status) exec "$repo_dir/scripts/adapterctl.sh" status "$@" ;;
   devices) exec "$repo_dir/scripts/inspect-connected-device.sh" "$@" ;;
   preflight) exec "$repo_dir/scripts/check.sh" "$@" ;;
