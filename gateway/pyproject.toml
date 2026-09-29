@@ -15,6 +15,7 @@ test = ["pytest>=8,<9", "pytest-asyncio>=0.24,<1", "jsonschema>=4.23,<5"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/inkmate_gateway"]
+force-include = {"src/inkmate_gateway/nikos_applications.json" = "inkmate_gateway/nikos_applications.json"}
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]

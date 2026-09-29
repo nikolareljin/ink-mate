@@ -1,0 +1,62 @@
+{
+  "schema_version": "1",
+  "applications": [
+    {
+      "adapter_id": "nikos-ubuntu-gedit",
+      "display_name": "Gedit",
+      "platforms": ["linux"],
+      "command": ["gedit"],
+      "aliases": ["open text editor", "open editor", "open gedit"]
+    },
+    {
+      "adapter_id": "nikos-ubuntu-files",
+      "display_name": "Files",
+      "platforms": ["linux"],
+      "command": ["nautilus"],
+      "aliases": ["open files"]
+    },
+    {
+      "adapter_id": "nikos-macos-textedit",
+      "display_name": "TextEdit",
+      "platforms": ["darwin"],
+      "command": ["open", "-a", "TextEdit"],
+      "aliases": ["open text editor", "open textedit"]
+    },
+    {
+      "adapter_id": "nikos-macos-finder",
+      "display_name": "Finder",
+      "platforms": ["darwin"],
+      "command": ["open", "."],
+      "aliases": ["open finder", "open files"]
+    },
+    {
+      "adapter_id": "nikos-windows-notepad",
+      "display_name": "Notepad",
+      "platforms": ["win"],
+      "command": ["notepad.exe"],
+      "aliases": ["open text editor", "open notepad"]
+    },
+    {
+      "adapter_id": "nikos-windows-files",
+      "display_name": "File Explorer",
+      "platforms": ["win"],
+      "command": ["explorer.exe"],
+      "aliases": ["open file explorer", "open files"]
+    },
+    {
+      "adapter_id": "nikos-vscode",
+      "display_name": "Visual Studio Code",
+      "platforms": ["linux", "darwin", "win"],
+      "command": ["code"],
+      "macos_command": ["open", "-a", "Visual Studio Code"],
+      "aliases": ["open coding ide", "open code", "open vscode", "open visual studio code"]
+    },
+    {
+      "adapter_id": "nikos-browser",
+      "display_name": "Default browser",
+      "platforms": ["linux", "darwin", "win"],
+      "command": null,
+      "aliases": ["open browser"]
+    }
+  ]
+}

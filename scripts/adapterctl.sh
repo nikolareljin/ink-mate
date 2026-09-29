@@ -5,7 +5,7 @@
 # PARAMETERS:
 #   status                         Check the local adapter host
 #   list                           List registered adapters
-#   approve ID FINGERPRINT --yes   Approve one discovered adapter
+#   approve ID FINGERPRINT [--yes] Approve one discovered adapter
 #   disable ID --yes               Disable an adapter
 #   grant ID DEVICE --yes          Grant a device access to an adapter
 #   revoke ID DEVICE --yes         Revoke a device grant
@@ -29,12 +29,20 @@ auth=(-H "Authorization: Bearer $token")
 command=${1:-status}
 shift || true
 need_yes() { [[ ${!#} = --yes ]] || { echo "$command requires --yes" >&2; exit 2; }; }
+confirm() {
+  local prompt=$1
+  local assume_yes=${2:-}
+  if [[ $assume_yes = --yes ]]; then return; fi
+  [[ -t 0 ]] || { echo "$command requires --yes without a terminal" >&2; exit 2; }
+  read -r -p "$prompt [y/N] " answer
+  [[ $answer =~ ^[Yy]([Ee][Ss])?$ ]] || { echo "cancelled" >&2; exit 1; }
+}
 case "$command" in
   status) curl --silent --show-error --fail "$url/healthz" ;;
   list) curl --silent --show-error --fail "${auth[@]}" "$url/v1/adapters" ;;
   jobs) curl --silent --show-error --fail "${auth[@]}" "$url/v1/jobs" ;;
   approve)
-    [[ $# -eq 3 ]] || { echo "usage: approve ID FINGERPRINT --yes" >&2; exit 2; }; need_yes "$@"
+    [[ $# -eq 2 || $# -eq 3 ]] || { echo "usage: approve ID FINGERPRINT [--yes]" >&2; exit 2; }; confirm "Approve adapter '$1'?" "${3:-}"
     curl --silent --show-error --fail -X POST "${auth[@]}" --data-urlencode "fingerprint=$2" "$url/v1/adapters/$1/approve" ;;
   disable)
     [[ $# -eq 2 ]] || { echo "usage: disable ID --yes" >&2; exit 2; }; need_yes "$@"

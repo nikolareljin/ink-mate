@@ -70,6 +70,58 @@ Read operations return one short card. Changes require physical confirmation on
 the device first. Accepted jobs are retained for seven days and can be listed
 with `./dev jobs`.
 
+## Desktop applications
+
+The adapter host includes four fixed NikOS adapters per supported OS. They are
+separate examples for adding other local applications without accepting an
+executable path, arguments, or a shell command from InkMate.
+
+Their primary definitions are the versioned JSON catalog at
+`gateway/src/inkmate_gateway/nikos_applications.json`. Each entry supplies its
+adapter ID, operating systems, fixed argument vector, and spoken aliases. The
+adapter host validates and executes that catalog; application names and commands
+are not accepted from a device request.
+
+Approve and grant each adapter before use. `approve` asks the local operator
+for confirmation. Add `--yes` only for an intentional non-interactive setup:
+
+```sh
+./dev adapters list
+./dev adapters approve nikos-ubuntu-gedit FINGERPRINT
+./dev adapters grant nikos-ubuntu-gedit DEVICE_ID --yes
+```
+
+Each launch is mutating and requires a short BOOT confirmation. Approve and
+grant each adapter that the device may use.
+
+| OS | Adapter | Spoken request | Fixed launcher |
+| --- | --- | --- | --- |
+| Ubuntu | `nikos-ubuntu-gedit` | `open text editor`, `open editor`, `open gedit` | `gedit` |
+| Ubuntu | `nikos-ubuntu-files` | `open files` | `nautilus` |
+| Ubuntu | `nikos-browser` | `open browser` | OS default browser |
+| macOS | `nikos-macos-textedit` | `open text editor`, `open TextEdit` | `open -a TextEdit` |
+| macOS | `nikos-macos-finder` | `open Finder`, `open files` | `open .` |
+| macOS | `nikos-browser` | `open browser` | OS default browser |
+| Windows | `nikos-windows-notepad` | `open text editor`, `open Notepad` | `notepad.exe` |
+| Windows | `nikos-windows-files` | `open File Explorer`, `open files` | `explorer.exe` |
+| Windows | `nikos-browser` | `open browser` | OS default browser |
+| All three | `nikos-vscode` | `open coding IDE`, `open code`, `open VSCode` | `code`, or `open -a "Visual Studio Code"` on macOS |
+
+The host registers only the adapters for its operating system. An unavailable
+launcher returns an error card instead of reporting success.
+
+The browser also has the explicit typed operation below for a specific URL. It
+accepts absolute `http` and `https` URLs only, and still requires device
+confirmation:
+
+```text
+adapter nikos-browser browser.open-url url=https://example.com
+```
+
+To add another NikOS application, define a new fixed adapter ID, its fixed
+argument vector, spoken aliases, tests, and documentation. Do not add a generic
+executable or argument parameter.
+
 A CLI integration receives one JSON invocation on standard input and writes one
 JSON result on standard output. HTTP integrations receive the same invocation at
 `POST /v1/invoke` with their integration token. Both return `status`, `title`,
