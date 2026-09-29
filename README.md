@@ -94,6 +94,8 @@ logging, Python, and Docker behavior. Each command accepts `--help`.
 ./test                           # gateway, firmware, and documentation checks
 ./deploy --profile v2 --port /dev/ttyACM0 --hardware-verified
 ./scripts/verify-connected-device.sh v2 /dev/ttyACM0
+./dev run gateway                  # starts the trusted-LAN gateway in Docker
+./dev stop                         # stops the gateway without removing its data
 ./dev run adapter-host             # optional loopback-only local adapter host
 ./dev adapters list                # inspect discovered and approved adapters
 ```
