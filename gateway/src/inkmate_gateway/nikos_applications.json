@@ -49,7 +49,7 @@
       "platforms": ["linux", "darwin", "win"],
       "command": ["code"],
       "macos_command": ["open", "-a", "Visual Studio Code"],
-      "aliases": ["open coding ide", "open code", "open vscode", "open visual studio code"]
+      "aliases": ["open coding ide", "open code", "open vscode", "open vs code", "open visual studio code"]
     },
     {
       "adapter_id": "nikos-browser",

@@ -40,6 +40,50 @@ Use `./dev adapters revoke ID DEVICE_ID --yes` to remove one device grant,
 `./dev adapters disable ID --yes` to stop an integration, and `./dev jobs` to
 inspect retained accepted jobs.
 
+## Adapter command reference
+
+Run `./dev --help` for the complete command reference, parameters, and
+activation example. This is the single source of truth for the local adapter
+CLI. `list` reports `active` only after both approval and a device grant.
+
+## Device adapter requests
+
+The gateway maps a small set of fixed spoken requests to the JSON adapter
+catalog. It does not ask the response provider to choose an executable. Every
+desktop request returns a confirmation card; press BOOT briefly to launch or
+hold BOOT to cancel.
+
+| Adapter | Spoken requests | Typed request |
+| --- | --- | --- |
+| `nikos-vscode` | `open VSCode`, `open VS Code`, `could you open VS Code for me` | `adapter nikos-vscode app.open` |
+| `nikos-browser` | `open browser` | `adapter nikos-browser browser.open` |
+| `nikos-browser` | None | `adapter nikos-browser browser.open-url url=https://example.com` |
+| OS text editor | `open text editor` | `adapter ADAPTER_ID app.open` |
+| OS file explorer | `open files` | `adapter ADAPTER_ID app.open` |
+
+The typed request format is `adapter ADAPTER_ID OPERATION_ID key=value`. Each
+parameter must be declared by the operation. Browser URLs accept only absolute
+`http` and `https` values. Text and file adapter IDs depend on the host OS; use
+`./dev adapters list` for the exact IDs.
+
+## Local adapter-host HTTP API
+
+The host listens only on `127.0.0.1`. Administrative endpoints require
+`Authorization: Bearer HOST_TOKEN`; the registration endpoint is local-only and
+does not use that header. `HOST_TOKEN` is stored in the ignored `.env` file.
+
+| Method and path | Parameters | Purpose |
+| --- | --- | --- |
+| `GET /healthz` | None | Host health check. |
+| `POST /v1/registrations` | JSON `Registration` | Register an HTTP or CLI adapter as discovered. |
+| `GET /v1/adapters` | Optional query `device_id` | List all adapters, or active adapters granted to one device. |
+| `POST /v1/adapters/{ID}/approve` | Form `fingerprint` | Approve a discovered adapter definition. |
+| `POST /v1/adapters/{ID}/grants/{DEVICE_ID}` | None | Grant a device access. |
+| `DELETE /v1/adapters/{ID}/grants/{DEVICE_ID}` | None | Revoke a device grant. |
+| `POST /v1/adapters/{ID}/disable` | None | Disable an adapter. |
+| `GET /v1/jobs` | Optional query `device_id` | List accepted jobs. |
+| `POST /v1/invocations` | JSON `Invocation` | Invoke an approved and granted adapter. The gateway normally calls this endpoint. |
+
 ## Providers
 
 Speech and response providers use a typed interface and return normalized

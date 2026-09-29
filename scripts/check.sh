@@ -1,5 +1,17 @@
 #!/usr/bin/env bash
+# SCRIPT: check
+# DESCRIPTION: Run all available local InkMate validation checks
+# USAGE: ./scripts/check.sh
+# PARAMETERS:
+#   None
+# EXAMPLE: ./dev preflight
+# ----------------------------------------------------
 set -euo pipefail
+
+if [[ ${1:-} == -h || ${1:-} == --help ]]; then
+  sed -n '/^# SCRIPT:/,/^# ----------------------------------------------------/s/^# \{0,1\}//p' "$0"
+  exit 0
+fi
 
 repo_dir=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 cd "$repo_dir"

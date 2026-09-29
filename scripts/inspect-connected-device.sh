@@ -1,5 +1,17 @@
 #!/usr/bin/env bash
+# SCRIPT: inspect-connected-device
+# DESCRIPTION: Install ESP-IDF if needed and inspect one connected device
+# USAGE: ./scripts/inspect-connected-device.sh /dev/ttyDEVICE
+# PARAMETERS:
+#   DEVICE    Required serial device path
+# EXAMPLE: ./dev devices /dev/ttyACM0
+# ----------------------------------------------------
 set -euo pipefail
+
+if [[ ${1:-} == -h || ${1:-} == --help ]]; then
+  sed -n '/^# SCRIPT:/,/^# ----------------------------------------------------/s/^# \{0,1\}//p' "$0"
+  exit 0
+fi
 
 if [[ "$#" -ne 1 ]]; then
   echo "usage: $0 /dev/ttyDEVICE" >&2

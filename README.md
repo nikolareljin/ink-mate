@@ -105,6 +105,25 @@ logging, Python, and Docker behavior. Each command accepts `--help`.
 installation paths are ignored by Git; see each command's `--help` for
 component-selection and path options.
 
+### Open desktop applications
+
+The adapter host can open fixed, approved desktop applications. It never accepts
+an application path, argument, or shell command from the device. Start the host,
+approve the discovered adapter fingerprint, and grant the paired device:
+
+```sh
+./dev run adapter-host
+./dev adapters list
+./dev adapters approve nikos-vscode FINGERPRINT
+./dev adapters grant nikos-vscode DEVICE_ID --yes
+```
+
+Ask `open VS Code for me` or use a typed request such as
+`adapter nikos-browser browser.open-url url=https://example.com`. The device
+shows a confirmation card; briefly press BOOT to launch, or hold BOOT to cancel.
+Use `./dev --help` for every adapter command. The [extension guide](docs/extensions.md)
+lists supported applications, parameters, examples, and the approval model.
+
 ### Gateway
 
 1. Copy `.env.example` to `.env` and replace every placeholder.

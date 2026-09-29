@@ -11,8 +11,17 @@
 #   revoke ID DEVICE --yes         Revoke a device grant
 #   jobs                           List retained adapter jobs
 #   install-service [--start] --yes Install a systemd user service
+# EXAMPLE:
+#   ./dev adapters list
+#   ./dev adapters approve nikos-vscode FINGERPRINT
+#   ./dev adapters grant nikos-vscode inkmate-demo --yes
 # ----------------------------------------------------
 set -euo pipefail
+
+if [[ ${1:-} == -h || ${1:-} == --help ]]; then
+  sed -n '/^# SCRIPT:/,/^# ----------------------------------------------------/s/^# \{0,1\}//p' "$0"
+  exit 0
+fi
 
 repo_dir=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 if [[ ${1:-} == install-service ]]; then

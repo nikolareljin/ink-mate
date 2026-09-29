@@ -1,5 +1,17 @@
 #!/bin/sh
+# SCRIPT: build-firmware
+# DESCRIPTION: Build one explicit InkMate firmware profile
+# USAGE: ./scripts/build-firmware.sh v1|v2
+# PARAMETERS:
+#   PROFILE    Required board profile, v1 or v2
+# EXAMPLE: ./scripts/build-firmware.sh v2
+# ----------------------------------------------------
 set -eu
+
+if [ "${1:-}" = -h ] || [ "${1:-}" = --help ]; then
+  sed -n '/^# SCRIPT:/,/^# ----------------------------------------------------/s/^# \{0,1\}//p' "$0"
+  exit 0
+fi
 
 if [ "$#" -ne 1 ]; then
   echo "usage: $0 v1|v2" >&2

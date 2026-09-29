@@ -1,5 +1,18 @@
 #!/bin/sh
+# SCRIPT: verify-controls
+# DESCRIPTION: Capture BOOT and PWR control events from a connected device
+# USAGE: ./scripts/verify-controls.sh /dev/ttyDEVICE [SECONDS]
+# PARAMETERS:
+#   DEVICE     Required serial device path
+#   SECONDS    Capture duration, default 30
+# EXAMPLE: ./scripts/verify-controls.sh /dev/ttyACM0 30
+# ----------------------------------------------------
 set -eu
+
+if [ "${1:-}" = -h ] || [ "${1:-}" = --help ]; then
+  sed -n '/^# SCRIPT:/,/^# ----------------------------------------------------/s/^# \{0,1\}//p' "$0"
+  exit 0
+fi
 
 if [ "$#" -lt 1 ] || [ "$#" -gt 2 ]; then
   echo "usage: $0 /dev/ttyDEVICE [seconds]" >&2

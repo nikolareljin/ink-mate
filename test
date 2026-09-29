@@ -1,4 +1,15 @@
 #!/usr/bin/env bash
+# SCRIPT: test
+# DESCRIPTION: Run InkMate firmware, gateway, and documentation tests
+# USAGE: ./test [--firmware|--gateway|--docs] [--profile v1|v2|both] [--esp-idf-dir DIR]
+# PARAMETERS:
+#   --firmware          Test firmware for the selected profile
+#   --gateway           Run gateway tests and validate Compose
+#   --docs              Build documentation with warnings as errors
+#   --profile PROFILE   Select v1, v2, or both firmware profiles
+#   --esp-idf-dir DIR   Set the ESP-IDF directory
+# EXAMPLE: ./test --gateway
+# ----------------------------------------------------
 set -euo pipefail
 
 usage() {

@@ -1,4 +1,16 @@
 #!/usr/bin/env bash
+# SCRIPT: install
+# DESCRIPTION: Install local InkMate development dependencies
+# USAGE: ./install [OPTIONS]
+# PARAMETERS:
+#   --esp-idf-dir DIR  Set the ESP-IDF installation directory
+#   --skip-esp-idf     Skip ESP-IDF installation
+#   --skip-gateway     Skip gateway virtual environment setup
+#   --skip-docs        Skip documentation virtual environment setup
+#   --with-audio       Install optional local speech dependencies
+#   --with-docker      Install or start Docker when needed
+# EXAMPLE: ./install --skip-esp-idf --skip-docs --with-audio
+# ----------------------------------------------------
 set -euo pipefail
 
 usage() {

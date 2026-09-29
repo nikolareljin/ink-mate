@@ -1,5 +1,17 @@
 #!/bin/sh
+# SCRIPT: inspect-hardware
+# DESCRIPTION: Report connected ESP32-S3 flash and chip details without MAC output
+# USAGE: ./scripts/inspect-hardware.sh /dev/ttyDEVICE
+# PARAMETERS:
+#   DEVICE    Required serial device path
+# EXAMPLE: ./scripts/inspect-hardware.sh /dev/ttyACM0
+# ----------------------------------------------------
 set -eu
+
+if [ "${1:-}" = -h ] || [ "${1:-}" = --help ]; then
+  sed -n '/^# SCRIPT:/,/^# ----------------------------------------------------/s/^# \{0,1\}//p' "$0"
+  exit 0
+fi
 
 if [ "$#" -ne 1 ]; then
   echo "usage: $0 /dev/ttyDEVICE" >&2

@@ -13,3 +13,14 @@ Set `INKMATE_TTS_URL` to a trusted Piper-compatible HTTP endpoint for speech
 output. With neither option configured, the gateway fails closed for STT and
 
 Actions are constructed as fixed argument vectors (`SafeCommand`) and cannot contain a shell command string. Coding-agent support is disabled unless explicitly enabled and constrained to canonical allowlisted workspaces.
+
+## Desktop application adapters
+
+The gateway maps fixed spoken requests, including `open VS Code for me`, to
+approved JSON-defined adapters. It does not use the response provider to choose
+an executable. Run `./dev run adapter-host`, then approve and grant each adapter
+before use. Each app launch returns a device confirmation card; a brief BOOT
+press runs the approved fixed command.
+
+See [the extension guide](../docs/extensions.md) for adapter commands,
+parameters, supported applications, and browser URL examples.

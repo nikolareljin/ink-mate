@@ -65,7 +65,8 @@ Each connection starts disabled. You inspect its manifest, approve its exact
 fingerprint, and grant it to a specific device. Read-only requests return a card.
 Anything that changes state comes back to the device for confirmation first.
 The [extension guide](extensions.md) documents the current local-service
-interface and approval flow.
+interface and approval flow, including approved desktop applications such as the
+default browser and VS Code.
 
 ## Supported hardware
 

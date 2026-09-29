@@ -1,4 +1,15 @@
 #!/usr/bin/env bash
+# SCRIPT: deploy
+# DESCRIPTION: Build and flash a verified InkMate board profile over USB
+# USAGE: ./deploy --profile v1|v2 --port /dev/ttyDEVICE --hardware-verified [OPTIONS]
+# PARAMETERS:
+#   --profile PROFILE      Required board profile, v1 or v2
+#   --port DEVICE          Required serial device path
+#   --hardware-verified    Required acknowledgement after physical verification
+#   --skip-build           Flash an existing build
+#   --esp-idf-dir DIR      Set the ESP-IDF directory
+# EXAMPLE: ./deploy --profile v2 --port /dev/ttyACM0 --hardware-verified
+# ----------------------------------------------------
 set -euo pipefail
 
 usage() {

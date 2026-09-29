@@ -1,13 +1,39 @@
 #!/usr/bin/env bash
 # SCRIPT: dev
 # DESCRIPTION: Run InkMate development and local adapter commands
-# USAGE: ./dev <install|build|run|stop|test|status|devices|preflight|adapters|jobs|previews> [OPTIONS]
+# USAGE: ./dev COMMAND [OPTIONS]
 # PARAMETERS:
-#   run gateway|adapter-host     Start a foreground service
-#   stop                        Stop the InkMate gateway container
-#   adapters COMMAND             Run adapter administration or install-service
-#   jobs                         List retained adapter jobs
-#   previews                     Render black-and-white V2 state PNGs
+#   install                       Install project dependencies
+#   build                         Build firmware, gateway image, and docs
+#   test                          Run project tests
+#   deploy [OPTIONS]              Deploy firmware to a verified device
+#   update [OPTIONS]              Update pinned project dependencies
+#   run gateway                   Build and start the device-facing gateway
+#   run adapter-host              Start the loopback-only adapter host in this terminal
+#   stop                          Stop the gateway container
+#   status                        Check adapter host health
+#   devices [OPTIONS]             Inspect a connected InkMate device
+#   preflight                     Run the repository check suite
+#   previews                      Render V2 display preview images
+#   jobs                          List retained adapter jobs
+#   adapters install-service [--start] --yes
+#                                 Install the adapter host systemd user service
+#   adapters status               Check adapter host health
+#   adapters list                 List adapter IDs, fingerprints, and states
+#   adapters approve ID FINGERPRINT [--yes]
+#                                 Approve a discovered adapter, prompting unless --yes
+#   adapters grant ID DEVICE_ID --yes
+#                                 Grant one paired device access to an approved adapter
+#   adapters revoke ID DEVICE_ID --yes
+#                                 Remove one device grant
+#   adapters disable ID --yes     Disable an adapter for every device
+#   adapters jobs                 List retained accepted adapter jobs
+# EXAMPLE:
+#   ./dev run adapter-host
+#   ./dev adapters list
+#   ./dev adapters approve nikos-vscode FINGERPRINT
+#   ./dev adapters grant nikos-vscode inkmate-demo --yes
+#   ./dev adapters list
 # ----------------------------------------------------
 set -euo pipefail
 

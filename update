@@ -1,4 +1,11 @@
 #!/usr/bin/env bash
+# SCRIPT: update
+# DESCRIPTION: Initialize pinned project submodules
+# USAGE: ./update [--remote]
+# PARAMETERS:
+#   --remote    Update submodules from configured tracking branches
+# EXAMPLE: ./update
+# ----------------------------------------------------
 set -euo pipefail
 
 usage() {

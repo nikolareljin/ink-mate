@@ -1,5 +1,18 @@
 #!/bin/sh
+# SCRIPT: configure-v2-enrollment
+# DESCRIPTION: Write an enrolled V2 device identity into private firmware config
+# USAGE: ./scripts/configure-v2-enrollment.sh [--replace] [DEVICE_ID]
+# PARAMETERS:
+#   --replace     Replace an existing private firmware configuration
+#   DEVICE_ID     Select an enrolled device identity
+# EXAMPLE: ./scripts/configure-v2-enrollment.sh inkmate-demo
+# ----------------------------------------------------
 set -eu
+
+if [ "${1:-}" = -h ] || [ "${1:-}" = --help ]; then
+  sed -n '/^# SCRIPT:/,/^# ----------------------------------------------------/s/^# \{0,1\}//p' "$0"
+  exit 0
+fi
 
 if [ "$#" -gt 2 ]; then
   echo "usage: $0 [--replace] [DEVICE_ID]" >&2

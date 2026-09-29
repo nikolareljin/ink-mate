@@ -1,4 +1,15 @@
 #!/usr/bin/env bash
+# SCRIPT: build
+# DESCRIPTION: Build InkMate firmware, gateway, and documentation components
+# USAGE: ./build [--firmware|--gateway|--docs] [--profile v1|v2|both] [--esp-idf-dir DIR]
+# PARAMETERS:
+#   --firmware          Build firmware for the selected profile
+#   --gateway           Build the gateway container image
+#   --docs              Build the documentation site
+#   --profile PROFILE   Select v1, v2, or both firmware profiles
+#   --esp-idf-dir DIR   Set the ESP-IDF directory
+# EXAMPLE: ./build --gateway
+# ----------------------------------------------------
 set -euo pipefail
 
 usage() {
