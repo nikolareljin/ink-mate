@@ -52,6 +52,22 @@ def test_nikos_adapters_are_discovered_and_require_approval(tmp_path):
     assert registry.list("desk")[0]["adapter_id"] == "nikos-ubuntu-mousepad"
 
 
+def test_removed_builtin_application_is_disabled_and_its_grants_are_revoked(tmp_path):
+    registry = Registry(tmp_path, TOKEN)
+    adapter = next(item for item in registry.list() if item["adapter_id"] == "nikos-ubuntu-mousepad")
+    registry.approve("nikos-ubuntu-mousepad", adapter["fingerprint"])
+    registry.grant("nikos-ubuntu-mousepad", "desk")
+    registry.db.execute("UPDATE adapters SET adapter_id='nikos-ubuntu-gedit' WHERE adapter_id='nikos-ubuntu-mousepad'")
+    registry.db.execute("UPDATE grants SET adapter_id='nikos-ubuntu-gedit' WHERE adapter_id='nikos-ubuntu-mousepad'")
+    registry.db.commit()
+
+    reloaded = Registry(tmp_path, TOKEN)
+
+    retired = next(item for item in reloaded.list() if item["adapter_id"] == "nikos-ubuntu-gedit")
+    assert retired["state"] == "disabled"
+    assert reloaded.list("desk") == []
+
+
 def test_nikos_application_catalog_is_json_with_platform_examples():
     definitions = application_definitions()
     assert definitions["nikos-ubuntu-mousepad"]["command"] == ["mousepad"]
