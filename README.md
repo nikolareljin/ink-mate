@@ -127,6 +127,8 @@ Ask `open VS Code for me` or use a typed request such as
 shows a confirmation card; briefly press BOOT to launch, or hold BOOT to cancel.
 Use `./dev --help` for every adapter command. The [extension guide](docs/extensions.md)
 lists supported applications, parameters, examples, and the approval model.
+Use its [host software installation guide](docs/extensions.md#install-host-software)
+for NikOS, DistroDeck, Ollama models, VS Code, and media applications.
 
 ### Gateway
 

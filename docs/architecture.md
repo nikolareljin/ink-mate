@@ -50,7 +50,8 @@ health checks need no physical confirmation; state-changing work does.
 After speech-to-text, ordinary questions are sent to the configured response
 provider and its answer becomes the card and optional speech. The default
 provider is the local Ollama endpoint configured by `INKMATE_OLLAMA_URL` and
-`INKMATE_OLLAMA_MODEL`.
+`INKMATE_OLLAMA_MODEL`. See the [host software installation guide](extensions.md#install-host-software)
+for the official Ollama installation and model-library links.
 
 The response model is not used to select or execute adapters. Fixed adapter
 requests and the desktop application phrases are parsed locally into typed,

@@ -145,6 +145,28 @@ The adapter host includes four fixed NikOS adapters per supported OS. They are
 separate examples for adding other local applications without accepting an
 executable path, arguments, or a shell command from InkMate.
 
+## Install host software
+
+Install applications on the host computer before approving an InkMate adapter.
+The adapter host verifies that its fixed launcher exists, and returns an error
+card instead of reporting success when it does not. Installing software does not
+create, approve, or grant an adapter.
+
+| Need | Installation guide | Example after installation |
+| --- | --- | --- |
+| Full AI workstation | [Install NikOS](https://github.com/nikolareljin/nikos#install) | Its optional bundles include local AI models, development tools, and desktop software. |
+| Package and developer-tool installer | [Install DistroDeck](https://github.com/nikolareljin/distrodeck#install) and view its [tool categories](https://github.com/nikolareljin/distrodeck#install-tools-categories) | `distrodeck install-tools --list-tools` lists the current catalog. |
+| Local response model | [Install Ollama on Linux](https://docs.ollama.com/linux) and browse the [Ollama model library](https://ollama.com/library) | Set `INKMATE_OLLAMA_URL` and `INKMATE_OLLAMA_MODEL` after installing and pulling a model. |
+| VS Code | [Install VS Code on Linux](https://code.visualstudio.com/docs/setup/linux) | Verify `code` is on `PATH`, then approve `nikos-vscode`. |
+| Music and audio tools | [NikOS command reference](https://github.com/nikolareljin/nikos#commands) | `nikos add music` installs the NikOS music bundle. |
+| Graphics and media tools | [DistroDeck tool categories](https://github.com/nikolareljin/distrodeck#install-tools-categories) | Use `distrodeck install-tools --list-tools` before selecting a tool. |
+
+For example, a NikOS host can add a model bundle or music bundle with its own
+documented commands. A DistroDeck host can inspect its catalog before installing
+named tools. Do not use an InkMate request to install a package. Define a fixed
+JSON adapter only after the application is installed, then approve and grant it
+for the intended device.
+
 Their primary definitions are the versioned JSON catalog at
 `gateway/src/inkmate_gateway/nikos_applications.json`. Each entry supplies its
 adapter ID, operating systems, fixed argument vector, and spoken aliases. The

@@ -23,4 +23,5 @@ before use. Each app launch returns a device confirmation card; a brief BOOT
 press runs the approved fixed command.
 
 See [the extension guide](../docs/extensions.md) for adapter commands,
-parameters, supported applications, and browser URL examples.
+parameters, supported applications, browser URL examples, and links for
+[installing host software](../docs/extensions.md#install-host-software).
