@@ -1,4 +1,13 @@
 #!/usr/bin/env python3
+# SCRIPT: render-display-previews
+# DESCRIPTION: Render deterministic V2 display previews from source SVG icons
+# USAGE: ./scripts/render-display-previews.py [--output-dir DIRECTORY] [--write-header|--check]
+# PARAMETERS:
+#   --output-dir DIRECTORY  Directory for generated preview PNG files
+#   --write-header           Update the generated firmware icon header
+#   --check                  Fail when the generated firmware icon header is stale
+# EXAMPLE: ./scripts/render-display-previews.py --check
+# ----------------------------------------------------
 """Render deterministic V2 state-screen previews without a connected board."""
 
 import argparse

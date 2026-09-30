@@ -1,4 +1,11 @@
 #!/usr/bin/env python3
+# SCRIPT: check-doc-assets
+# DESCRIPTION: Validate Markdown documentation image paths and asset locations
+# USAGE: ./scripts/check_doc_assets.py
+# PARAMETERS:
+#   None
+# EXAMPLE: ./scripts/check_doc_assets.py
+# ----------------------------------------------------
 """Validate documentation image paths and MkDocs HTML image restrictions."""
 
 from __future__ import annotations
@@ -27,6 +34,12 @@ def expected_asset_prefix(source: Path) -> str:
 
 
 def main() -> int:
+    if sys.argv[1:] in (["-h"], ["--help"]):
+        print("Usage: ./scripts/check_doc_assets.py\n\nValidate Markdown documentation image paths and asset locations.")
+        return 0
+    if len(sys.argv) != 1:
+        print("usage: ./scripts/check_doc_assets.py", file=sys.stderr)
+        return 2
     errors: list[str] = []
     sources = [ROOT / "README.md", *sorted(DOCS.rglob("*.md"))]
     for source in sources:

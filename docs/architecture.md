@@ -45,6 +45,20 @@ health checks need no physical confirmation; state-changing work does.
 5. A requested mutation returns a proposal instead of executing. BOOT confirms
    it; expired, replayed, mismatched, or cancelled proposals are rejected.
 
+## Response model use
+
+After speech-to-text, ordinary questions are sent to the configured response
+provider and its answer becomes the card and optional speech. The default
+provider is the local Ollama endpoint configured by `INKMATE_OLLAMA_URL` and
+`INKMATE_OLLAMA_MODEL`. See the [host software installation guide](extensions.md#install-host-software)
+for the official Ollama installation and model-library links.
+
+The response model is not used to select or execute adapters. Fixed adapter
+requests and the desktop application phrases are parsed locally into typed,
+allowlisted operations before any response-provider call. Voice captures use
+the provider only to produce a short summary before the device confirms saving
+it.
+
 ## Deployment boundary
 
 Compose binds to loopback by default. LAN use needs an explicit bind address,

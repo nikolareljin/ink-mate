@@ -5,7 +5,7 @@ import time
 
 from httpx import ASGITransport, AsyncClient
 
-from inkmate_gateway.app import create_app
+from inkmate_gateway.app import _desktop_application_request, create_app
 from inkmate_gateway.config import Settings
 from inkmate_gateway.discovery import discovery_reply
 from inkmate_gateway.services import ActionService, SafeCommand
@@ -113,6 +113,17 @@ async def test_adapter_request_uses_typed_parameters_without_chat():
     assert response.status_code == 200
     assert response.json()["card"]["title"] == "Workflow"
     assert response.json()["card"]["body"] == "One task"
+
+
+def test_desktop_application_requests_map_to_fixed_adapter_operations():
+    assert _desktop_application_request("open text editor") == ("nikos-ubuntu-gedit", "app.open", {})
+    assert _desktop_application_request("open files") == ("nikos-ubuntu-files", "app.open", {})
+    assert _desktop_application_request("Open VSCode") == ("nikos-vscode", "app.open", {})
+    assert _desktop_application_request("Could you open VS Code for me?") == ("nikos-vscode", "app.open", {})
+    assert _desktop_application_request("Can you please open Gedit?") == ("nikos-ubuntu-gedit", "app.open", {})
+    assert _desktop_application_request("Would you open Gedit please?") == ("nikos-ubuntu-gedit", "app.open", {})
+    assert _desktop_application_request("open browser") == ("nikos-browser", "browser.open", {})
+    assert _desktop_application_request("open calculator") is None
 
 
 async def test_mutating_adapter_request_requires_confirmation():

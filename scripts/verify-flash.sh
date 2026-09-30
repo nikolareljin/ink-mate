@@ -1,5 +1,18 @@
 #!/bin/sh
+# SCRIPT: verify-flash
+# DESCRIPTION: Compare flashed firmware bytes with the selected local build
+# USAGE: ./scripts/verify-flash.sh v1|v2 /dev/ttyDEVICE
+# PARAMETERS:
+#   PROFILE    Required board profile, v1 or v2
+#   DEVICE     Required serial device path
+# EXAMPLE: ./scripts/verify-flash.sh v2 /dev/ttyACM0
+# ----------------------------------------------------
 set -eu
+
+if [ "${1:-}" = -h ] || [ "${1:-}" = --help ]; then
+  sed -n '/^# SCRIPT:/,/^# ----------------------------------------------------/s/^# \{0,1\}//p' "$0"
+  exit 0
+fi
 
 if [ "$#" -ne 2 ]; then
   echo "usage: $0 v1|v2 /dev/ttyDEVICE" >&2

@@ -4,8 +4,14 @@
 # USAGE: ./scripts/start-adapter-host.sh
 # PARAMETERS:
 #   None
+# EXAMPLE: ./dev run adapter-host
 # ----------------------------------------------------
 set -euo pipefail
+
+if [[ ${1:-} == -h || ${1:-} == --help ]]; then
+  sed -n '/^# SCRIPT:/,/^# ----------------------------------------------------/s/^# \{0,1\}//p' "$0"
+  exit 0
+fi
 
 repo_dir=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 env_file="$repo_dir/.env"

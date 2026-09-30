@@ -1,5 +1,17 @@
 #!/usr/bin/env bash
+# SCRIPT: install-esp-idf
+# DESCRIPTION: Install pinned ESP-IDF tools for ESP32-S3 development
+# USAGE: ./scripts/install-esp-idf.sh [ESP_IDF_DIRECTORY]
+# PARAMETERS:
+#   ESP_IDF_DIRECTORY    Optional installation directory
+# EXAMPLE: ./scripts/install-esp-idf.sh .tools/esp-idf
+# ----------------------------------------------------
 set -euo pipefail
+
+if [[ ${1:-} == -h || ${1:-} == --help ]]; then
+  sed -n '/^# SCRIPT:/,/^# ----------------------------------------------------/s/^# \{0,1\}//p' "$0"
+  exit 0
+fi
 
 if [[ "$#" -gt 1 ]]; then
   echo "usage: $0 [ESP_IDF_DIRECTORY]" >&2

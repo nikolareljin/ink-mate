@@ -1,5 +1,17 @@
 #!/bin/sh
+# SCRIPT: enroll-v2-device
+# DESCRIPTION: Create a new device identity and pairing secret
+# USAGE: ./scripts/enroll-v2-device.sh DEVICE_ID
+# PARAMETERS:
+#   DEVICE_ID    Lowercase letters, digits, hyphens, and underscores only
+# EXAMPLE: ./scripts/enroll-v2-device.sh inkmate-demo
+# ----------------------------------------------------
 set -eu
+
+if [ "${1:-}" = -h ] || [ "${1:-}" = --help ]; then
+  sed -n '/^# SCRIPT:/,/^# ----------------------------------------------------/s/^# \{0,1\}//p' "$0"
+  exit 0
+fi
 
 if [ "$#" -ne 1 ]; then
   echo "usage: $0 DEVICE_ID" >&2

@@ -5,8 +5,14 @@
 # PARAMETERS:
 #   --start    Enable and start the user service after installation
 #   --yes      Confirm writing the user service definition
+# EXAMPLE: ./dev adapters install-service --start --yes
 # ----------------------------------------------------
 set -euo pipefail
+
+if [[ ${1:-} == -h || ${1:-} == --help ]]; then
+  sed -n '/^# SCRIPT:/,/^# ----------------------------------------------------/s/^# \{0,1\}//p' "$0"
+  exit 0
+fi
 
 repo_dir=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 start=false

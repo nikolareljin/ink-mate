@@ -1,5 +1,18 @@
 #!/bin/sh
+# SCRIPT: start-device-gateway
+# DESCRIPTION: Build and start the device-facing gateway on the configured LAN interface
+# USAGE: ./scripts/start-device-gateway.sh
+# PARAMETERS:
+#   INKMATE_GATEWAY_INTERFACE    Required .env interface on the device LAN
+#   INKMATE_GATEWAY_PORT         Optional .env port, defaults to 8080 or a free port
+# EXAMPLE: ./dev run gateway
+# ----------------------------------------------------
 set -eu
+
+if [ "${1:-}" = -h ] || [ "${1:-}" = --help ]; then
+  sed -n '/^# SCRIPT:/,/^# ----------------------------------------------------/s/^# \{0,1\}//p' "$0"
+  exit 0
+fi
 
 repo_dir=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 gateway_env="$repo_dir/.env"

@@ -7,7 +7,10 @@ import hashlib
 import json
 import os
 import secrets
+import shutil
 import sqlite3
+import sys
+import webbrowser
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Literal
@@ -81,7 +84,7 @@ class Manifest(Model):
     version: str = Field(pattern=r"^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$")
     display_name: str = Field(min_length=1, max_length=64)
     aliases: list[str] = Field(default_factory=list, max_length=8)
-    transport: Literal["http", "cli"]
+    transport: Literal["http", "cli", "application"]
     operations: list[Operation] = Field(min_length=1, max_length=32)
 
     @model_validator(mode="after")
@@ -136,7 +139,7 @@ def validate_registration(registration: Registration) -> None:
         if not registration.endpoint or registration.argv:
             raise ValueError("HTTP adapters require endpoint and forbid argv")
         ensure_local_url(registration.endpoint)
-    else:
+    elif registration.manifest.transport == "cli":
         if registration.endpoint or not registration.argv:
             raise ValueError("CLI adapters require argv and forbid endpoint")
         if not os.path.isabs(registration.argv[0]):
@@ -145,6 +148,119 @@ def validate_registration(registration: Registration) -> None:
             raise ValueError("CLI executable must exist")
         if registration.cwd and not os.path.isabs(registration.cwd):
             raise ValueError("CLI cwd must be an absolute path")
+    else:
+        if registration.manifest.adapter_id not in application_definitions():
+            raise ValueError("application transport is reserved for NikOS application adapters")
+        if registration.endpoint or registration.argv or registration.cwd:
+            raise ValueError("application adapters forbid endpoint, argv, and cwd")
+
+
+def application_definitions() -> dict[str, dict[str, Any]]:
+    """Load the fixed NikOS adapter catalog from its packaged JSON definition."""
+    source = Path(__file__).with_name("nikos_applications.json")
+    data = json.loads(source.read_text(encoding="utf-8"))
+    if data.get("schema_version") != "1" or not isinstance(data.get("applications"), list):
+        raise ValueError("invalid NikOS application adapter catalog")
+    definitions = {item["adapter_id"]: item for item in data["applications"]}
+    if len(definitions) != len(data["applications"]):
+        raise ValueError("NikOS application adapter IDs must be unique")
+    for adapter_id, item in definitions.items():
+        if not isinstance(item.get("display_name"), str) or not isinstance(item.get("platforms"), list):
+            raise ValueError(f"invalid NikOS application adapter: {adapter_id}")
+        command = item.get("command")
+        if command is not None and (not isinstance(command, list) or not command or not all(isinstance(part, str) for part in command)):
+            raise ValueError(f"invalid NikOS application command: {adapter_id}")
+    return definitions
+
+
+def current_platform() -> str:
+    return "win" if sys.platform.startswith("win") else sys.platform
+
+
+def spoken_application_requests() -> dict[str, str]:
+    return {
+        alias: adapter_id
+        for adapter_id, item in application_definitions().items()
+        if current_platform() in item["platforms"]
+        for alias in item.get("aliases", [])
+    }
+
+
+def application_command(adapter_id: str) -> tuple[str, ...] | None:
+    definition = application_definitions()[adapter_id]
+    command = definition.get("macos_command") if sys.platform == "darwin" else definition.get("command")
+    return tuple(command) if command is not None else None
+
+
+def nikos_application_registrations() -> list[Registration]:
+    """Return fixed NikOS application adapters for the current operating system."""
+    platform = current_platform()
+    definitions = application_definitions()
+    adapter_ids = [adapter_id for adapter_id, item in definitions.items() if platform in item["platforms"]]
+    return [Registration(
+        manifest=Manifest(
+            schema_version="1", adapter_id=adapter_id, version="1.0.0", display_name=definitions[adapter_id]["display_name"],
+            transport="application", operations=browser_operations() if adapter_id == "nikos-browser" else [Operation(
+                operation_id="app.open", display_name=f"Open {definitions[adapter_id]['display_name']}", mode="mutating",
+                timeout_seconds=5, job_allowed=False, input_schema=InputSchema(),
+            )],
+        ),
+    ) for adapter_id in adapter_ids]
+
+
+def browser_operations() -> list[Operation]:
+    return [
+        Operation(operation_id="browser.open", display_name="Open default browser", mode="mutating",
+                  timeout_seconds=5, job_allowed=False, input_schema=InputSchema()),
+        Operation(operation_id="browser.open-url", display_name="Open browser URL", mode="mutating",
+                  timeout_seconds=5, job_allowed=False,
+                  input_schema=InputSchema(properties={"url": Parameter(type="string", min_length=1, max_length=2048)}, required=["url"])),
+    ]
+
+
+async def launch_application(adapter_id: str, url: str | None = None) -> AdapterResult:
+    display_name, command = application_definitions()[adapter_id]["display_name"], application_command(adapter_id)
+    if command is None:
+        target = "about:blank" if url is None else ensure_browser_url(url)
+        if not webbrowser.open_new_tab(target):
+            raise RuntimeError("APPLICATION_UNAVAILABLE: browser")
+    else:
+        if not await application_available(command):
+            raise RuntimeError(f"APPLICATION_UNAVAILABLE: {display_name}")
+        try:
+            proc = await asyncio.create_subprocess_exec(
+                *command, stdin=asyncio.subprocess.DEVNULL, stdout=asyncio.subprocess.DEVNULL,
+                stderr=asyncio.subprocess.DEVNULL, start_new_session=True,
+            )
+        except OSError as exc:
+            raise RuntimeError(f"APPLICATION_UNAVAILABLE: {display_name}") from exc
+        if proc.returncode not in (None, 0):
+            raise RuntimeError(f"APPLICATION_UNAVAILABLE: {display_name}")
+    return AdapterResult(status="completed", title="Application opened", body=display_name)
+
+
+async def application_available(command: tuple[str, ...]) -> bool:
+    if not shutil.which(command[0]):
+        return False
+    if sys.platform != "darwin" or command[:2] != ("open", "-a"):
+        return True
+    probe = await asyncio.create_subprocess_exec(
+        "open", "-Ra", command[2], stdin=asyncio.subprocess.DEVNULL,
+        stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL,
+    )
+    try:
+        return await asyncio.wait_for(probe.wait(), timeout=5) == 0
+    except asyncio.TimeoutError:
+        probe.kill()
+        await probe.wait()
+        return False
+
+
+def ensure_browser_url(value: str) -> str:
+    parsed = urlparse(value)
+    if parsed.scheme not in {"http", "https"} or not parsed.hostname:
+        raise ValueError("browser URL must be an absolute HTTP or HTTPS URL")
+    return value
 
 
 def validate_parameters(operation: Operation, values: dict[str, Any]) -> None:
@@ -208,8 +324,12 @@ class Registry:
               created_at TEXT NOT NULL, result TEXT, expires_at TEXT NOT NULL);
             """
         )
+        for registration in nikos_application_registrations():
+            self.register(registration, builtin=True)
 
-    def register(self, registration: Registration) -> dict[str, str]:
+    def register(self, registration: Registration, *, builtin: bool = False) -> dict[str, str]:
+        if registration.manifest.transport == "application" and not builtin:
+            raise ValueError("application adapters are built in and cannot be registered over HTTP")
         validate_registration(registration)
         adapter_id = registration.manifest.adapter_id
         digest = fingerprint(registration)
@@ -303,7 +423,7 @@ class Registry:
                 response = await client.post(f"{row['endpoint']}/v1/invoke", json=payload, headers={"Authorization": f"Bearer {row['adapter_token']}"})
                 response.raise_for_status()
                 result = AdapterResult.model_validate(response.json())
-        else:
+        elif manifest.transport == "cli":
             proc = await asyncio.create_subprocess_exec(*json.loads(row["argv"]), cwd=row["cwd"], stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.DEVNULL, limit=65_536)
             try:
                 output, _ = await asyncio.wait_for(
@@ -319,6 +439,8 @@ class Registry:
             if len(output) > 65_536:
                 raise RuntimeError("CLI adapter response is too large")
             result = AdapterResult.model_validate_json(output)
+        else:
+            result = await launch_application(invocation.adapter_id, invocation.parameters.get("url"))
         if result.status == "accepted":
             if not operation.job_allowed or not result.job_id:
                 raise ValueError("adapter returned invalid job result")

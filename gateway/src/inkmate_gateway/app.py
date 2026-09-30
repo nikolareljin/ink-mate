@@ -1,5 +1,6 @@
 import hashlib
 import hmac
+import re
 import time
 
 from fastapi import Body, Depends, FastAPI, Header, HTTPException, Request
@@ -8,10 +9,16 @@ from fastapi.responses import Response
 from .developer import ConfirmationService, GitHubIssueService, WorkItemService, classify_voice_intent
 from .discovery import start_discovery
 from .config import Settings, get_settings
+from .adapter_host import spoken_application_requests
 from .models import ActionResult, Card, ErrorDetail, InteractionResponse, Snapshot
 from .services import AdapterHostClient, ActionService, AudioStore, FasterWhisperSTT, HttpTTS, OllamaProvider, SilentTTS, UnavailableSTT, host_health
 def _default_stt(cfg: Settings):
-    return FasterWhisperSTT(cfg.stt_model) if cfg.stt_backend == "faster-whisper" else UnavailableSTT()
+    if cfg.stt_backend != "faster-whisper":
+        return UnavailableSTT()
+    try:
+        return FasterWhisperSTT(cfg.stt_model)
+    except ModuleNotFoundError:
+        return UnavailableSTT()
 
 
 def _default_tts(cfg: Settings):
@@ -82,7 +89,7 @@ def create_app(settings: Settings | None = None, *, stt=None, tts=None, chat=Non
             raise HTTPException(413, "audio is empty or too large")
         try:
             transcript = await app.state.stt.transcribe(audio, request.headers.get("content-type", "audio/wav"))
-            adapter_request = _adapter_request(transcript)
+            adapter_request = _desktop_application_request(transcript) or _adapter_request(transcript)
             if adapter_request:
                 adapter_id, operation_id, parameters = adapter_request
                 try:
@@ -281,6 +288,23 @@ def _adapter_request(transcript: str) -> tuple[str, str, dict[str, str]] | None:
             raise RuntimeError("ADAPTER_REQUEST_INVALID")
         parameters[key] = value
     return adapter_id, operation_id, parameters
+
+
+def _desktop_application_request(transcript: str) -> tuple[str, str, dict[str, str]] | None:
+    """Map a small set of spoken application requests to fixed NikOS adapters."""
+    request = " ".join(transcript.casefold().split())
+    adapter_id = spoken_application_requests().get(request)
+    if adapter_id is None:
+        for phrase, candidate in spoken_application_requests().items():
+            if re.fullmatch(
+                rf"(?:(?:please )?(?:(?:can|could|would) you )?(?:please )?)?"
+                rf"{re.escape(phrase)}(?: (?:for me|please))?[.!?]*",
+                request,
+            ):
+                adapter_id = candidate
+                break
+    operation_id = "browser.open" if adapter_id == "nikos-browser" else "app.open"
+    return (adapter_id, operation_id, {}) if adapter_id else None
 
 
 def _coerce_adapter_parameters(values: dict[str, str], operation: dict) -> dict:
