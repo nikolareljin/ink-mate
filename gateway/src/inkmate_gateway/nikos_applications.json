@@ -2,11 +2,11 @@
   "schema_version": "1",
   "applications": [
     {
-      "adapter_id": "nikos-ubuntu-gedit",
-      "display_name": "Gedit",
+      "adapter_id": "nikos-ubuntu-mousepad",
+      "display_name": "Mousepad",
       "platforms": ["linux"],
-      "command": ["gedit"],
-      "aliases": ["open text editor", "open editor", "open gedit"]
+      "command": ["mousepad"],
+      "aliases": ["open text editor", "open editor", "open mousepad"]
     },
     {
       "adapter_id": "nikos-ubuntu-files",

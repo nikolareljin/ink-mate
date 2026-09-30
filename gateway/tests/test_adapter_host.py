@@ -44,17 +44,17 @@ def test_register_requires_local_http_endpoint(tmp_path):
 
 def test_nikos_adapters_are_discovered_and_require_approval(tmp_path):
     registry = Registry(tmp_path, TOKEN)
-    adapter = next(item for item in registry.list() if item["adapter_id"] == "nikos-ubuntu-gedit")
+    adapter = next(item for item in registry.list() if item["adapter_id"] == "nikos-ubuntu-mousepad")
     assert adapter["state"] == "discovered"
     assert registry.list("desk") == []
-    registry.approve("nikos-ubuntu-gedit", adapter["fingerprint"])
-    registry.grant("nikos-ubuntu-gedit", "desk")
-    assert registry.list("desk")[0]["adapter_id"] == "nikos-ubuntu-gedit"
+    registry.approve("nikos-ubuntu-mousepad", adapter["fingerprint"])
+    registry.grant("nikos-ubuntu-mousepad", "desk")
+    assert registry.list("desk")[0]["adapter_id"] == "nikos-ubuntu-mousepad"
 
 
 def test_nikos_application_catalog_is_json_with_platform_examples():
     definitions = application_definitions()
-    assert definitions["nikos-ubuntu-gedit"]["command"] == ["gedit"]
+    assert definitions["nikos-ubuntu-mousepad"]["command"] == ["mousepad"]
     assert definitions["nikos-macos-textedit"]["command"] == ["open", "-a", "TextEdit"]
     assert definitions["nikos-windows-notepad"]["command"] == ["notepad.exe"]
     assert definitions["nikos-browser"]["command"] is None
