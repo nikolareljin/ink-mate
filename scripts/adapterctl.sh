@@ -5,7 +5,7 @@
 # PARAMETERS:
 #   status                         Check the local adapter host
 #   list                           List adapters with full SHA-256 fingerprints
-#   approve ID FINGERPRINT [--yes] Approve one discovered adapter
+#   approve ID FINGERPRINT [--yes] Approve one adapter and print the next grant command
 #   disable ID --yes               Disable an adapter
 #   grant ID DEVICE --yes          Grant a device access to an adapter
 #   revoke ID DEVICE --yes         Revoke a device grant
@@ -15,6 +15,8 @@
 #   ./dev adapters list
 #   # Copy the SHA-256 line printed by `adapters list`.
 #   ./dev adapters approve nikos-vscode 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+#   # Result: Approved adapter: nikos-vscode
+#   # Next:   ./dev adapters grant nikos-vscode DEVICE_ID --yes
 #   ./dev adapters grant nikos-vscode inkmate-demo --yes
 # ----------------------------------------------------
 set -euo pipefail
@@ -68,7 +70,9 @@ case "$command" in
   jobs) curl --silent --show-error --fail "${auth[@]}" "$url/v1/jobs" ;;
   approve)
     [[ $# -eq 2 || $# -eq 3 ]] || { echo "usage: approve ID FINGERPRINT [--yes]" >&2; exit 2; }; confirm "Approve adapter '$1'?" "${3:-}"
-    curl --silent --show-error --fail -X POST --get "${auth[@]}" --data-urlencode "fingerprint=$2" "$url/v1/adapters/$1/approve" ;;
+    curl --silent --show-error --fail -X POST --get "${auth[@]}" --data-urlencode "fingerprint=$2" "$url/v1/adapters/$1/approve" >/dev/null
+    printf 'Approved adapter: %s\n' "$1"
+    printf 'Next: ./dev adapters grant %s DEVICE_ID --yes\n' "$1" ;;
   disable)
     [[ $# -eq 2 ]] || { echo "usage: disable ID --yes" >&2; exit 2; }; need_yes "$@"
     curl --silent --show-error --fail -X POST "${auth[@]}" "$url/v1/adapters/$1/disable" ;;

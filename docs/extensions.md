@@ -61,11 +61,15 @@ Transport:   application
 Operations:  app.open
 
 $ ./dev adapters approve nikos-ubuntu-gedit 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef --yes
+Approved adapter: nikos-ubuntu-gedit
+Next: ./dev adapters grant nikos-ubuntu-gedit DEVICE_ID --yes
+
 $ ./dev adapters grant nikos-ubuntu-gedit DEVICE_ID --yes
 ```
 
 Replace the example SHA-256 value with the value printed on the local computer.
 `NIKOS-GEDIT` and `nikos-ubuntu-gedit` are names, not fingerprints.
+The command does not print the adapter token.
 
 ## Device adapter requests
 
@@ -98,7 +102,7 @@ does not use that header. `HOST_TOKEN` is stored in the ignored `.env` file.
 | `GET /healthz` | None | Host health check. |
 | `POST /v1/registrations` | JSON `Registration` | Register an HTTP or CLI adapter as discovered. |
 | `GET /v1/adapters` | Optional query `device_id` | List all adapters, or active adapters granted to one device. |
-| `POST /v1/adapters/{ID}/approve` | Form `fingerprint` | Approve a discovered adapter definition. |
+| `POST /v1/adapters/{ID}/approve` | Query `fingerprint` | Approve a discovered adapter definition. |
 | `POST /v1/adapters/{ID}/grants/{DEVICE_ID}` | None | Grant a device access. |
 | `DELETE /v1/adapters/{ID}/grants/{DEVICE_ID}` | None | Revoke a device grant. |
 | `POST /v1/adapters/{ID}/disable` | None | Disable an adapter. |
