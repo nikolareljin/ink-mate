@@ -19,9 +19,9 @@
 #   adapters install-service [--start] --yes
 #                                 Install the adapter host systemd user service
 #   adapters status               Check adapter host health
-#   adapters list                 List adapter IDs, fingerprints, and states
+#   adapters list                 Print adapter IDs, states, operations, and SHA-256 fingerprints
 #   adapters approve ID FINGERPRINT [--yes]
-#                                 Approve a discovered adapter, prompting unless --yes
+#                                 Copy FINGERPRINT from `adapters list`; do not use an adapter alias
 #   adapters grant ID DEVICE_ID --yes
 #                                 Grant one paired device access to an approved adapter
 #   adapters revoke ID DEVICE_ID --yes
@@ -31,7 +31,8 @@
 # EXAMPLE:
 #   ./dev run adapter-host
 #   ./dev adapters list
-#   ./dev adapters approve nikos-vscode FINGERPRINT
+#   # Example output: SHA-256: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+#   ./dev adapters approve nikos-vscode 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
 #   ./dev adapters grant nikos-vscode inkmate-demo --yes
 #   ./dev adapters list
 # ----------------------------------------------------

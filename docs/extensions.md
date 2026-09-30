@@ -44,7 +44,28 @@ inspect retained accepted jobs.
 
 Run `./dev --help` for the complete command reference, parameters, and
 activation example. This is the single source of truth for the local adapter
-CLI. `list` reports `active` only after both approval and a device grant.
+CLI. `list` prints each adapter ID, state, operations, and full SHA-256
+fingerprint. `list` reports `active` only after both approval and a device
+grant.
+
+Copy the value after `SHA-256:` from `./dev adapters list`. It is a 64-character
+hexadecimal fingerprint, not the adapter ID or a display name. This is a
+made-up example. Do not reuse this value:
+
+```text
+$ ./dev adapters list
+Adapter ID:  nikos-ubuntu-gedit
+State:       discovered
+SHA-256:     0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+Transport:   application
+Operations:  app.open
+
+$ ./dev adapters approve nikos-ubuntu-gedit 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef --yes
+$ ./dev adapters grant nikos-ubuntu-gedit DEVICE_ID --yes
+```
+
+Replace the example SHA-256 value with the value printed on the local computer.
+`NIKOS-GEDIT` and `nikos-ubuntu-gedit` are names, not fingerprints.
 
 ## Device adapter requests
 

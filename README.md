@@ -118,6 +118,10 @@ approve the discovered adapter fingerprint, and grant the paired device:
 ./dev adapters grant nikos-vscode DEVICE_ID --yes
 ```
 
+`FINGERPRINT` means the full SHA-256 value labeled `SHA-256:` in the list
+output. It is not an adapter name. The [extension guide](docs/extensions.md)
+contains a made-up copy-paste example.
+
 Ask `open VS Code for me` or use a typed request such as
 `adapter nikos-browser browser.open-url url=https://example.com`. The device
 shows a confirmation card; briefly press BOOT to launch, or hold BOOT to cancel.

@@ -191,3 +191,17 @@ async def test_host_api_requires_authentication_for_adapter_inventory(tmp_path):
     assert registered.status_code == 200
     assert denied.status_code == 401
     assert any(adapter["adapter_id"] == "workflow" and adapter["state"] == "discovered" for adapter in listed.json())
+
+
+async def test_host_api_approves_adapter_with_query_fingerprint(tmp_path):
+    app = create_adapter_host(state_dir=str(tmp_path), token=TOKEN)
+    registration = Registration(manifest=manifest("http"), endpoint="http://127.0.0.1:9001")
+    headers = {"Authorization": f"Bearer {TOKEN}"}
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        registered = await client.post("/v1/registrations", json=registration.model_dump(mode="json"))
+        approved = await client.post(
+            "/v1/adapters/workflow/approve", headers=headers,
+            params={"fingerprint": registered.json()["fingerprint"]},
+        )
+    assert approved.status_code == 200
+    assert "adapter_token" in approved.json()

@@ -4,7 +4,7 @@
 # USAGE: ./scripts/adapterctl.sh <status|list|approve|disable|grant|revoke|jobs|install-service> [OPTIONS]
 # PARAMETERS:
 #   status                         Check the local adapter host
-#   list                           List registered adapters
+#   list                           List adapters with full SHA-256 fingerprints
 #   approve ID FINGERPRINT [--yes] Approve one discovered adapter
 #   disable ID --yes               Disable an adapter
 #   grant ID DEVICE --yes          Grant a device access to an adapter
@@ -13,7 +13,8 @@
 #   install-service [--start] --yes Install a systemd user service
 # EXAMPLE:
 #   ./dev adapters list
-#   ./dev adapters approve nikos-vscode FINGERPRINT
+#   # Copy the SHA-256 line printed by `adapters list`.
+#   ./dev adapters approve nikos-vscode 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
 #   ./dev adapters grant nikos-vscode inkmate-demo --yes
 # ----------------------------------------------------
 set -euo pipefail
@@ -37,6 +38,19 @@ auth=(-H "Authorization: Bearer $token")
 
 command=${1:-status}
 shift || true
+format_adapters() {
+  jq -r '
+    if type != "array" then error("adapter host returned an invalid list")
+    elif length == 0 then "No adapters are registered."
+    else .[] |
+      "Adapter ID:  \(.adapter_id)\n" +
+      "State:       \(.state)\n" +
+      "SHA-256:     \(.fingerprint)\n" +
+      "Transport:   \(.manifest.transport)\n" +
+      "Operations:  \([.manifest.operations[].operation_id] | join(", "))\n"
+    end
+  '
+}
 need_yes() { [[ ${!#} = --yes ]] || { echo "$command requires --yes" >&2; exit 2; }; }
 confirm() {
   local prompt=$1
@@ -48,11 +62,13 @@ confirm() {
 }
 case "$command" in
   status) curl --silent --show-error --fail "$url/healthz" ;;
-  list) curl --silent --show-error --fail "${auth[@]}" "$url/v1/adapters" ;;
+  list)
+    command -v jq >/dev/null 2>&1 || { echo "jq is required to format adapter fingerprints" >&2; exit 1; }
+    curl --silent --show-error --fail "${auth[@]}" "$url/v1/adapters" | format_adapters ;;
   jobs) curl --silent --show-error --fail "${auth[@]}" "$url/v1/jobs" ;;
   approve)
     [[ $# -eq 2 || $# -eq 3 ]] || { echo "usage: approve ID FINGERPRINT [--yes]" >&2; exit 2; }; confirm "Approve adapter '$1'?" "${3:-}"
-    curl --silent --show-error --fail -X POST "${auth[@]}" --data-urlencode "fingerprint=$2" "$url/v1/adapters/$1/approve" ;;
+    curl --silent --show-error --fail -X POST --get "${auth[@]}" --data-urlencode "fingerprint=$2" "$url/v1/adapters/$1/approve" ;;
   disable)
     [[ $# -eq 2 ]] || { echo "usage: disable ID --yes" >&2; exit 2; }; need_yes "$@"
     curl --silent --show-error --fail -X POST "${auth[@]}" "$url/v1/adapters/$1/disable" ;;
