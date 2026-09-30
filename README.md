@@ -98,6 +98,7 @@ logging, Python, and Docker behavior. Each command accepts `--help`.
 ./dev stop                         # stops the gateway without removing its data
 ./dev run adapter-host             # optional loopback-only local adapter host
 ./dev adapters list                # inspect discovered and approved adapters
+./dev devices list                 # paired device IDs and detected USB serial ports
 ```
 
 `./install --with-docker` explicitly opts into system Docker installation. Use

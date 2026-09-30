@@ -12,7 +12,9 @@
 #   run adapter-host              Start the loopback-only adapter host in this terminal
 #   stop                          Stop the gateway container
 #   status                        Check adapter host health
-#   devices [OPTIONS]             Inspect a connected InkMate device
+#   devices list                  List paired device IDs and detected USB serial ports
+#   devices inspect DEVICE         Inspect a selected USB serial device
+#   devices DEVICE                 Alias for `devices inspect DEVICE`
 #   preflight                     Run the repository check suite
 #   previews                      Render V2 display preview images
 #   jobs                          List retained adapter jobs
@@ -29,6 +31,7 @@
 #   adapters disable ID --yes     Disable an adapter for every device
 #   adapters jobs                 List retained accepted adapter jobs
 # EXAMPLE:
+#   ./dev devices list
 #   ./dev run adapter-host
 #   ./dev adapters list
 #   # Example output: SHA-256: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
@@ -53,7 +56,13 @@ case "$verb" in
     esac ;;
   stop) exec "$repo_dir/scripts/stop-device-gateway.sh" "$@" ;;
   status) exec "$repo_dir/scripts/adapterctl.sh" status "$@" ;;
-  devices) exec "$repo_dir/scripts/inspect-connected-device.sh" "$@" ;;
+  devices)
+    case ${1:-} in
+      list) shift; exec "$repo_dir/scripts/list-devices.sh" "$@" ;;
+      inspect) shift; exec "$repo_dir/scripts/inspect-connected-device.sh" "$@" ;;
+      /dev/*) exec "$repo_dir/scripts/inspect-connected-device.sh" "$@" ;;
+      *) echo "devices requires list, inspect DEVICE, or /dev/ttyDEVICE" >&2; exit 2 ;;
+    esac ;;
   preflight) exec "$repo_dir/scripts/check.sh" "$@" ;;
   adapters) exec "$repo_dir/scripts/adapterctl.sh" "$@" ;;
   jobs) exec "$repo_dir/scripts/adapterctl.sh" jobs "$@" ;;

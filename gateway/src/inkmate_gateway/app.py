@@ -296,7 +296,11 @@ def _desktop_application_request(transcript: str) -> tuple[str, str, dict[str, s
     adapter_id = spoken_application_requests().get(request)
     if adapter_id is None:
         for phrase, candidate in spoken_application_requests().items():
-            if re.fullmatch(rf"(?:please )?(?:can you |could you )?{re.escape(phrase)}(?: for me)?[.!?]?", request):
+            if re.fullmatch(
+                rf"(?:(?:please )?(?:(?:can|could|would) you )?(?:please )?)?"
+                rf"{re.escape(phrase)}(?: (?:for me|please))?[.!?]*",
+                request,
+            ):
                 adapter_id = candidate
                 break
     operation_id = "browser.open" if adapter_id == "nikos-browser" else "app.open"

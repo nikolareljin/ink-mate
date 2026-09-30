@@ -201,6 +201,80 @@ grant each adapter that the device may use.
 The host registers only the adapters for its operating system. An unavailable
 launcher returns an error card instead of reporting success.
 
+### Complete Ubuntu Gedit example
+
+This is the full path from a host computer to a device-confirmed launch. The
+SHA-256 value below is made up. Copy the real value printed by `adapters list`.
+
+1. Verify the fixed launcher exists. Install Gedit first when this command
+   prints no path:
+
+   ```sh
+   command -v gedit
+   sudo apt install gedit
+   ```
+
+2. In one terminal, start the local adapter host and leave it running:
+
+   ```sh
+   ./dev run adapter-host
+   ```
+
+3. In a second terminal, list the adapter. A first-time setup shows
+   `discovered`; an `active` adapter was already approved and granted:
+
+   ```text
+   $ ./dev adapters list
+   Adapter ID:  nikos-ubuntu-gedit
+   State:       discovered
+   SHA-256:     0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+   Transport:   application
+   Operations:  app.open
+   ```
+
+4. List paired device IDs and detected USB ports. Use the device ID, not the
+   `/dev/...` port, when granting an adapter. In this example the device ID is
+   `inkmate-demo`:
+
+   ```sh
+   ./dev devices list
+   ```
+
+   Approve the exact displayed fingerprint, then grant the paired device:
+
+   ```sh
+   ./dev adapters approve nikos-ubuntu-gedit 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef --yes
+   ./dev adapters grant nikos-ubuntu-gedit inkmate-demo --yes
+   ./dev adapters list
+   ```
+
+   The final list must show `State: active`. If it shows `discovered` or
+   `approved`, do not continue: the gateway cannot invoke the adapter yet. If
+   it was already `active`, skip the approval and grant commands.
+
+   To inspect a selected board over USB, use the serial port from `devices
+   list`, for example `./dev devices inspect /dev/ttyACM0`.
+
+5. Start the gateway if it is not already running:
+
+   ```sh
+   ./dev run gateway
+   ```
+
+6. Hold BOOT, say exactly `Open Gedit`, then release BOOT. `Please open Gedit`,
+   `Can you please open Gedit?`, and `Would you open Gedit for me?` are also
+   recognized locally. A request such as `How do I open Gedit?` is a question,
+   so it is intentionally sent to the response provider instead of launching
+   an application.
+
+7. The device displays `Confirm adapter action`. Briefly press BOOT to run the
+   fixed `gedit` command. Hold BOOT to cancel. The application does not open
+   until that confirmation.
+
+For VS Code, use the same sequence with `nikos-vscode`, verify `command -v
+code`, and say `Open VS Code`. The adapter command is fixed to `code` on Linux
+and Windows, and `open -a "Visual Studio Code"` on macOS.
+
 The browser also has the explicit typed operation below for a specific URL. It
 accepts absolute `http` and `https` URLs only, and still requires device
 confirmation:
