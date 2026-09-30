@@ -324,8 +324,24 @@ class Registry:
               created_at TEXT NOT NULL, result TEXT, expires_at TEXT NOT NULL);
             """
         )
-        for registration in nikos_application_registrations():
+        registrations = nikos_application_registrations()
+        self._retire_missing_builtin_applications({registration.manifest.adapter_id for registration in registrations})
+        for registration in registrations:
             self.register(registration, builtin=True)
+
+    def _retire_missing_builtin_applications(self, adapter_ids: set[str]) -> None:
+        """Disable removed built-ins so an old approved launcher cannot remain callable."""
+        rows = self.db.execute("SELECT adapter_id,manifest FROM adapters").fetchall()
+        retired = [
+            row["adapter_id"] for row in rows
+            if json.loads(row["manifest"]).get("transport") == "application"
+            and row["adapter_id"] not in adapter_ids
+        ]
+        for adapter_id in retired:
+            self.db.execute("DELETE FROM grants WHERE adapter_id=?", (adapter_id,))
+            self.db.execute("UPDATE adapters SET state='disabled',adapter_token=NULL WHERE adapter_id=?", (adapter_id,))
+        if retired:
+            self.db.commit()
 
     def register(self, registration: Registration, *, builtin: bool = False) -> dict[str, str]:
         if registration.manifest.transport == "application" and not builtin:

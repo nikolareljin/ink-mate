@@ -54,21 +54,21 @@ made-up example. Do not reuse this value:
 
 ```text
 $ ./dev adapters list
-Adapter ID:  nikos-ubuntu-gedit
+Adapter ID:  nikos-ubuntu-mousepad
 State:       discovered
 SHA-256:     0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
 Transport:   application
 Operations:  app.open
 
-$ ./dev adapters approve nikos-ubuntu-gedit 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef --yes
-Approved adapter: nikos-ubuntu-gedit
-Next: ./dev adapters grant nikos-ubuntu-gedit DEVICE_ID --yes
+$ ./dev adapters approve nikos-ubuntu-mousepad 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef --yes
+Approved adapter: nikos-ubuntu-mousepad
+Next: ./dev adapters grant nikos-ubuntu-mousepad DEVICE_ID --yes
 
-$ ./dev adapters grant nikos-ubuntu-gedit DEVICE_ID --yes
+$ ./dev adapters grant nikos-ubuntu-mousepad DEVICE_ID --yes
 ```
 
 Replace the example SHA-256 value with the value printed on the local computer.
-`NIKOS-GEDIT` and `nikos-ubuntu-gedit` are names, not fingerprints.
+`NIKOS-MOUSEPAD` and `nikos-ubuntu-mousepad` are names, not fingerprints.
 The command does not print the adapter token.
 
 ## Device adapter requests
@@ -178,8 +178,8 @@ for confirmation. Add `--yes` only for an intentional non-interactive setup:
 
 ```sh
 ./dev adapters list
-./dev adapters approve nikos-ubuntu-gedit FINGERPRINT
-./dev adapters grant nikos-ubuntu-gedit DEVICE_ID --yes
+./dev adapters approve nikos-ubuntu-mousepad FINGERPRINT
+./dev adapters grant nikos-ubuntu-mousepad DEVICE_ID --yes
 ```
 
 Each launch is mutating and requires a short BOOT confirmation. Approve and
@@ -187,7 +187,7 @@ grant each adapter that the device may use.
 
 | OS | Adapter | Spoken request | Fixed launcher |
 | --- | --- | --- | --- |
-| Ubuntu | `nikos-ubuntu-gedit` | `open text editor`, `open editor`, `open gedit` | `gedit` |
+| Ubuntu | `nikos-ubuntu-mousepad` | `open text editor`, `open editor`, `open mousepad` | `mousepad` |
 | Ubuntu | `nikos-ubuntu-files` | `open files` | `nautilus` |
 | Ubuntu | `nikos-browser` | `open browser` | OS default browser |
 | macOS | `nikos-macos-textedit` | `open text editor`, `open TextEdit` | `open -a TextEdit` |
@@ -201,17 +201,15 @@ grant each adapter that the device may use.
 The host registers only the adapters for its operating system. An unavailable
 launcher returns an error card instead of reporting success.
 
-### Complete Ubuntu Gedit example
+### Complete NikOS Mousepad example
 
 This is the full path from a host computer to a device-confirmed launch. The
 SHA-256 value below is made up. Copy the real value printed by `adapters list`.
 
-1. Verify the fixed launcher exists. Install Gedit first when this command
-   prints no path:
+1. Verify the Xubuntu text editor that NikOS includes is present:
 
    ```sh
-   command -v gedit
-   sudo apt install gedit
+   command -v mousepad
    ```
 
 2. In one terminal, start the local adapter host and leave it running:
@@ -225,7 +223,7 @@ SHA-256 value below is made up. Copy the real value printed by `adapters list`.
 
    ```text
    $ ./dev adapters list
-   Adapter ID:  nikos-ubuntu-gedit
+   Adapter ID:  nikos-ubuntu-mousepad
    State:       discovered
    SHA-256:     0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
    Transport:   application
@@ -243,8 +241,8 @@ SHA-256 value below is made up. Copy the real value printed by `adapters list`.
    Approve the exact displayed fingerprint, then grant the paired device:
 
    ```sh
-   ./dev adapters approve nikos-ubuntu-gedit 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef --yes
-   ./dev adapters grant nikos-ubuntu-gedit inkmate-demo --yes
+   ./dev adapters approve nikos-ubuntu-mousepad 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef --yes
+   ./dev adapters grant nikos-ubuntu-mousepad inkmate-demo --yes
    ./dev adapters list
    ```
 
@@ -261,14 +259,14 @@ SHA-256 value below is made up. Copy the real value printed by `adapters list`.
    ./dev run gateway
    ```
 
-6. Hold BOOT, say exactly `Open Gedit`, then release BOOT. `Please open Gedit`,
-   `Can you please open Gedit?`, and `Would you open Gedit for me?` are also
-   recognized locally. A request such as `How do I open Gedit?` is a question,
-   so it is intentionally sent to the response provider instead of launching
-   an application.
+6. Hold BOOT, say exactly `Open Mousepad`, then release BOOT. `Please open
+   Mousepad`, `Can you please open Mousepad?`, and `Would you open Mousepad for
+   me?` are also recognized locally. A request such as `How do I open
+   Mousepad?` is a question, so it is intentionally sent to the response
+   provider instead of launching an application.
 
 7. The device displays `Confirm adapter action`. Briefly press BOOT to run the
-   fixed `gedit` command. Hold BOOT to cancel. The application does not open
+   fixed `mousepad` command. Hold BOOT to cancel. The application does not open
    until that confirmation.
 
 For VS Code, use the same sequence with `nikos-vscode`, verify `command -v

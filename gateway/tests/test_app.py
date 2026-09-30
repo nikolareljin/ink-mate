@@ -116,12 +116,12 @@ async def test_adapter_request_uses_typed_parameters_without_chat():
 
 
 def test_desktop_application_requests_map_to_fixed_adapter_operations():
-    assert _desktop_application_request("open text editor") == ("nikos-ubuntu-gedit", "app.open", {})
+    assert _desktop_application_request("open text editor") == ("nikos-ubuntu-mousepad", "app.open", {})
     assert _desktop_application_request("open files") == ("nikos-ubuntu-files", "app.open", {})
     assert _desktop_application_request("Open VSCode") == ("nikos-vscode", "app.open", {})
     assert _desktop_application_request("Could you open VS Code for me?") == ("nikos-vscode", "app.open", {})
-    assert _desktop_application_request("Can you please open Gedit?") == ("nikos-ubuntu-gedit", "app.open", {})
-    assert _desktop_application_request("Would you open Gedit please?") == ("nikos-ubuntu-gedit", "app.open", {})
+    assert _desktop_application_request("Can you please open Mousepad?") == ("nikos-ubuntu-mousepad", "app.open", {})
+    assert _desktop_application_request("Would you open Mousepad please?") == ("nikos-ubuntu-mousepad", "app.open", {})
     assert _desktop_application_request("open browser") == ("nikos-browser", "browser.open", {})
     assert _desktop_application_request("open calculator") is None
 
